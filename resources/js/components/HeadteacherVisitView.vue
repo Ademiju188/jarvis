@@ -10,7 +10,18 @@
             <div class="lg:col-span-2 bg-white rounded-lg shadow-lg p-6">
                 <!-- Header -->
                 <div class="mb-6">
-                    <h2 class="text-2xl font-bold text-gray-900">Visit Details</h2>
+                    <div class="flex items-center space-x-4">
+                        <button
+                            @click="goBack"
+                            class="flex cursor-pointer items-center space-x-2 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition duration-150 ease-in-out"
+                        >
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                            </svg>
+                            <span>Back</span>
+                        </button>
+                        <h2 class="text-2xl font-bold text-gray-900">Visit Details</h2>
+                    </div>
                 </div>
                 <div class="space-y-6">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -240,6 +251,9 @@ export default {
             } catch (e) {
                 this.$toastr.error('Failed to copy link.');
             }
+        },
+        goBack() {
+            this.$router.go(-1);
         }
     }
 }

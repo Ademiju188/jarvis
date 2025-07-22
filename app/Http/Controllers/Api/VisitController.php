@@ -20,10 +20,10 @@ class VisitController extends Controller
 
         if ($user->isHeadteacher()) {
             // Headteacher only sees visits for their school
-            $visits = $user->school->visits()->with('school')->orderBy('visit_date', 'desc')->get();
+            $visits = $user->school->visits()->with('school', 'school.headteacher')->orderBy('visit_date', 'desc')->get();
         } else {
             // Admin sees all visits
-            $visits = Visit::with('school')->orderBy('visit_date', 'desc')->get();
+            $visits = Visit::with('school', 'school.headteacher')->orderBy('visit_date', 'desc')->get();
         }
 
         return response()->json($visits);
