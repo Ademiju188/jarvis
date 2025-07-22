@@ -5,31 +5,30 @@ import { createRouter, createWebHistory } from 'vue-router';
 import App from './App.vue';
 
 // Import components
+import Login from './components/Login.vue';
+import HeadmasterRegister from './components/HeadmasterRegister.vue';
+import HeadmasterDashboard from './components/HeadmasterDashboard.vue';
 import Dashboard from './components/Dashboard.vue';
-import VisitForm from './components/VisitForm.vue';
 import VisitList from './components/VisitList.vue';
+import VisitForm from './components/VisitForm.vue';
 import VisitView from './components/VisitView.vue';
 import VisitShare from './components/VisitShare.vue';
 import SchoolList from './components/SchoolList.vue';
 import SchoolForm from './components/SchoolForm.vue';
+import SchoolAccess from './components/SchoolAccess.vue';
+import RichTextEditor from './components/RichTextEditor.vue';
 
 // Import Toastr
 import 'toastr/build/toastr.min.css';
 import toastr from 'toastr';
 
-// Configure Toastr
+// Toastr configuration
 toastr.options = {
     closeButton: true,
-    debug: false,
-    newestOnTop: true,
     progressBar: true,
     positionClass: "toast-top-right",
-    preventDuplicates: false,
-    onclick: null,
-    showDuration: "300",
-    hideDuration: "1000",
-    timeOut: "5000",
-    extendedTimeOut: "1000",
+    timeOut: 3000,
+    extendedTimeOut: 1000,
     showEasing: "swing",
     hideEasing: "linear",
     showMethod: "fadeIn",
@@ -43,7 +42,8 @@ const store = createStore({
         schools: [],
         currentVisit: null,
         loading: false,
-        error: null
+        error: null,
+        isAuthenticated: false
     },
     mutations: {
         SET_VISITS(state, visits) {
@@ -69,6 +69,9 @@ const store = createStore({
             if (index !== -1) {
                 state.visits.splice(index, 1, updatedVisit);
             }
+        },
+        SET_AUTHENTICATED(state, isAuthenticated) {
+            state.isAuthenticated = isAuthenticated;
         }
     },
     getters: {
@@ -77,88 +80,128 @@ const store = createStore({
         recentVisits: (state) => state.visits.slice(0, 5)
     },
     actions: {
+        async checkAuth({ commit }) {
+            try {
+                const response = await fetch('/api/visits', { method: 'HEAD' });
+                if (!response.ok) {
+                    if (handleAuthError(response.status)) {
+                        return false;
+                    }
+                }
+                commit('SET_AUTHENTICATED', response.status !== 401);
+                return response.status !== 401;
+            } catch (error) {
+                commit('SET_AUTHENTICATED', false);
+                return false;
+            }
+        },
         async fetchVisits({ commit }) {
             commit('SET_LOADING', true);
             try {
                 const response = await fetch('/api/visits');
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    if (handleAuthError(response.status)) {
+                        return;
+                    }
+                    throw new Error('Failed to fetch visits');
                 }
                 const visits = await response.json();
                 commit('SET_VISITS', visits);
             } catch (error) {
                 commit('SET_ERROR', error.message);
-                console.error('Error fetching visits:', error);
             } finally {
                 commit('SET_LOADING', false);
             }
         },
         async fetchSchools({ commit }) {
-            commit('SET_LOADING', true);
             try {
                 const response = await fetch('/api/schools');
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    if (handleAuthError(response.status)) {
+                        return;
+                    }
+                    throw new Error('Failed to fetch schools');
                 }
                 const schools = await response.json();
                 commit('SET_SCHOOLS', schools);
             } catch (error) {
                 commit('SET_ERROR', error.message);
-                console.error('Error fetching schools:', error);
-            } finally {
-                commit('SET_LOADING', false);
             }
         },
         async createVisit({ commit }, visitData) {
-            commit('SET_LOADING', true);
             try {
                 const response = await fetch('/api/visits', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        'Accept': 'application/json',
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                     },
                     body: JSON.stringify(visitData)
                 });
+                // console.log(visitData);
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    if (handleAuthError(response.status)) {
+                        return;
+                    }
+                    throw new Error('Failed to create visit');
                 }
                 const visit = await response.json();
                 commit('ADD_VISIT', visit);
-                toastr.success('Visit record created successfully!');
                 return visit;
             } catch (error) {
                 commit('SET_ERROR', error.message);
-                toastr.error('Failed to create visit record. Please try again.');
                 throw error;
-            } finally {
-                commit('SET_LOADING', false);
             }
         },
         async updateVisit({ commit }, { id, data }) {
-            commit('SET_LOADING', true);
             try {
                 const response = await fetch(`/api/visits/${id}`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
+                        'Accept': 'application/json',
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                     },
                     body: JSON.stringify(data)
                 });
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    if (handleAuthError(response.status)) {
+                        return;
+                    }
+                    throw new Error('Failed to update visit');
                 }
                 const visit = await response.json();
                 commit('UPDATE_VISIT', visit);
-                toastr.success('Visit record updated successfully!');
                 return visit;
             } catch (error) {
                 commit('SET_ERROR', error.message);
-                toastr.error('Failed to update visit record. Please try again.');
                 throw error;
-            } finally {
-                commit('SET_LOADING', false);
+            }
+        },
+        async updateVisitStatus({ commit }, { visitId, newStatus }) {
+            try {
+                const response = await fetch(`/api/visits/${visitId}/status`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    },
+                    body: JSON.stringify({ status: newStatus })
+                });
+                if (!response.ok) {
+                    if (handleAuthError(response.status)) {
+                        return;
+                    }
+                    throw new Error('Failed to update visit status');
+                }
+                const visit = await response.json();
+                commit('UPDATE_VISIT', visit);
+                return visit;
+            } catch (error) {
+                commit('SET_ERROR', error.message);
+                throw error;
             }
         }
     }
@@ -166,18 +209,53 @@ const store = createStore({
 
 // Vue Router
 const routes = [
-    { path: '/', component: Dashboard },
+    { path: '/login', component: Login },
+    { path: '/register', component: HeadmasterRegister },
+    { path: '/headmaster/dashboard', component: HeadmasterDashboard },
+    { path: '/dashboard', component: Dashboard },
     { path: '/visits', component: VisitList },
     { path: '/visits/create', component: VisitForm },
     { path: '/visits/:id', component: VisitView },
+    { path: '/visits/:id/edit', component: VisitForm },
     { path: '/visits/share/:token', component: VisitShare },
     { path: '/schools', component: SchoolList },
-    { path: '/schools/create', component: SchoolForm }
+    { path: '/schools/create', component: SchoolForm },
+    { path: '/schools/:id/edit', component: SchoolForm },
+    { path: '/schools/token/:token', component: SchoolAccess },
+    { path: '/', redirect: '/dashboard' }
 ];
 
 const router = createRouter({
     history: createWebHistory(),
     routes
+});
+
+// Global error handler for authentication errors
+function handleAuthError(status) {
+    if (status === 401 || status === 422) {
+        store.commit('SET_AUTHENTICATED', false);
+        // Redirect to login page
+        if (router.currentRoute.value.path !== '/login') {
+            router.push('/login');
+        }
+        return true; // Error was handled
+    }
+    return false; // Error was not handled
+}
+
+// Navigation guard to check authentication
+router.beforeEach(async (to, from, next) => {
+    // Skip auth check for public routes
+    if (to.path === '/login' || to.path === '/register' || to.path.startsWith('/visits/share/') || to.path.startsWith('/schools/token/')) {
+        return next();
+    }
+
+    // Check if user is authenticated
+    const isAuthenticated = await store.dispatch('checkAuth');
+    if (!isAuthenticated) {
+        return next('/login');
+    }
+    next();
 });
 
 // Create and mount the app

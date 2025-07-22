@@ -1,250 +1,288 @@
 <template>
-  <div class="max-w-4xl mx-auto">
-    <transition
-      enter-active-class="transition-all duration-600 ease-out"
-      enter-from-class="opacity-0 transform translateY(20px)"
-      enter-to-class="opacity-100 transform translateY(0)"
-      appear
-    >
-      <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg border border-gray-200 hover-lift">
-        <!-- Header -->
-        <div class="px-6 py-4 border-b border-gray-200">
-          <h2 class="text-xl font-semibold text-gray-900">Create Visit Record</h2>
-          <p class="text-gray-600 mt-1">Document your school visit with detailed information</p>
+  <div class="max-w-4xl mx-auto p-6">
+    <div class="bg-white rounded-lg shadow-lg p-6">
+      <h2 class="text-2xl font-bold text-gray-900 mb-6">
+        {{ isEdit ? 'Edit Visit Record' : 'Create New Visit Record' }}
+      </h2>
+
+      <form @submit.prevent="submitForm" class="space-y-6">
+        <!-- Basic Information -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Visit Date</label>
+            <input
+              v-model="form.visit_date"
+              type="date"
+              required
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Consultant Name</label>
+            <input
+              v-model="form.consultant_name"
+              type="text"
+              required
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+          </div>
         </div>
 
-        <!-- Form -->
-        <form @submit.prevent="submitForm" class="p-6 space-y-6">
-          <!-- School Selection -->
-          <transition
-            enter-active-class="transition-all duration-500 ease-out"
-            enter-from-class="opacity-0 transform translateX(-20px)"
-            enter-to-class="opacity-100 transform translateX(0)"
-            appear
+        <!-- School Selection -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">School</label>
+          <select
+            v-model="form.school_id"
+            required
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                School *
-              </label>
-              <select
-                v-model="form.school_id"
-                required
-                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 hover:border-blue-400"
-              >
-                <option value="">Select a school</option>
-                <option v-for="school in schools" :key="school.id" :value="school.id">
-                  {{ school.name }} - {{ school.headteacher_name }}
-                </option>
-              </select>
-            </div>
-          </transition>
+            <option value="">Select a school</option>
+            <option v-for="school in schools" :key="school.id" :value="school.id">
+              {{ school.name }}
+            </option>
+          </select>
+        </div>
 
-          <!-- Visit Date and Consultant -->
-          <transition
-            enter-active-class="transition-all duration-500 ease-out"
-            enter-from-class="opacity-0 transform translateX(-20px)"
-            enter-to-class="opacity-100 transform translateX(0)"
-            appear
-          >
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                  Visit Date *
-                </label>
-                <input
-                  type="date"
-                  v-model="form.visit_date"
-                  required
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 hover:border-blue-400"
-                >
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                  Consultant Name *
-                </label>
-                <input
-                  type="text"
-                  v-model="form.consultant_name"
-                  required
-                  placeholder="Enter consultant name"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 hover:border-blue-400"
-                >
-              </div>
-            </div>
-          </transition>
-
-          <!-- Context -->
-          <transition
-            enter-active-class="transition-all duration-500 ease-out"
-            enter-from-class="opacity-0 transform translateX(-20px)"
-            enter-to-class="opacity-100 transform translateX(0)"
-            appear
-          >
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                Context *
-              </label>
-              <textarea
+        <!-- Rich Text Fields -->
+          <div>
+            <label for="context" class="block text-sm font-medium text-gray-700">
+              Context
+            </label>
+            <div class="mt-1">
+              <RichTextEditor
                 v-model="form.context"
-                required
-                rows="4"
+                :key="'context-' + (visitId || 'new') + '-' + isEdit"
                 placeholder="Describe the context and purpose of this visit..."
-                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 hover:border-blue-400 resize-none"
-              ></textarea>
+              />
+              <div v-if="validationErrors.context" class="text-red-600 text-sm mt-1">
+                {{ validationErrors.context[0] }}
+              </div>
             </div>
-          </transition>
+          </div>
 
-          <!-- Activities Undertaken -->
-          <transition
-            enter-active-class="transition-all duration-500 ease-out"
-            enter-from-class="opacity-0 transform translateX(-20px)"
-            enter-to-class="opacity-100 transform translateX(0)"
-            appear
-          >
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                Activities Undertaken *
-              </label>
-              <textarea
+          <div>
+            <label for="activities_undertaken" class="block text-sm font-medium text-gray-700">
+              Activities Undertaken
+            </label>
+            <div class="mt-1">
+              <RichTextEditor
                 v-model="form.activities_undertaken"
-                required
-                rows="4"
-                placeholder="Detail the activities and observations made during the visit..."
-                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 hover:border-blue-400 resize-none"
-              ></textarea>
+                :key="'activities-' + (visitId || 'new') + '-' + isEdit"
+                placeholder="Describe the activities undertaken..."
+              />
+              <div v-if="validationErrors.activities_undertaken" class="text-red-600 text-sm mt-1">
+                {{ validationErrors.activities_undertaken[0] }}
+              </div>
             </div>
-          </transition>
+          </div>
 
-          <!-- Key Findings -->
-          <transition
-            enter-active-class="transition-all duration-500 ease-out"
-            enter-from-class="opacity-0 transform translateX(-20px)"
-            enter-to-class="opacity-100 transform translateX(0)"
-            appear
-          >
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                Key Findings *
-              </label>
-              <textarea
+          <div>
+            <label for="progress" class="block text-sm font-medium text-gray-700">
+              Progress towards actions from last visit (if applicable)
+            </label>
+            <div class="mt-1">
+              <RichTextEditor
+                v-model="form.progress"
+                :key="'progress-' + (visitId || 'new') + '-' + isEdit"
+                placeholder="Describe the progress..."
+              />
+              <div v-if="validationErrors.progress" class="text-red-600 text-sm mt-1">
+                {{ validationErrors.progress[0] }}
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label for="key_findings" class="block text-sm font-medium text-gray-700">
+              Key Findings
+            </label>
+            <div class="mt-1">
+              <RichTextEditor
                 v-model="form.key_findings"
-                required
-                rows="4"
-                placeholder="Summarize the key findings and insights from the visit..."
-                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 hover:border-blue-400 resize-none"
-              ></textarea>
+                :key="'findings-' + (visitId || 'new') + '-' + isEdit"
+                placeholder="Describe the key findings..."
+              />
+              <div v-if="validationErrors.key_findings" class="text-red-600 text-sm mt-1">
+                {{ validationErrors.key_findings[0] }}
+              </div>
             </div>
-          </transition>
+          </div>
 
-          <!-- Recommendations -->
-          <transition
-            enter-active-class="transition-all duration-500 ease-out"
-            enter-from-class="opacity-0 transform translateX(-20px)"
-            enter-to-class="opacity-100 transform translateX(0)"
-            appear
-          >
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                Recommendations & Next Steps *
-              </label>
-              <textarea
+          <div>
+            <label for="recommendations" class="block text-sm font-medium text-gray-700">
+              Recommendations/Next Steps
+            </label>
+            <div class="mt-1">
+              <RichTextEditor
                 v-model="form.recommendations"
-                required
-                rows="4"
-                placeholder="Provide recommendations and outline next steps..."
-                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 hover:border-blue-400 resize-none"
-              ></textarea>
+                :key="'recommendations-' + (visitId || 'new') + '-' + isEdit"
+                placeholder="Describe the recommendations..."
+              />
+              <div v-if="validationErrors.recommendations" class="text-red-600 text-sm mt-1">
+                {{ validationErrors.recommendations[0] }}
+              </div>
             </div>
-          </transition>
+          </div>
 
-          <!-- Next Visit Date -->
-          <transition
-            enter-active-class="transition-all duration-500 ease-out"
-            enter-from-class="opacity-0 transform translateX(-20px)"
-            enter-to-class="opacity-100 transform translateX(0)"
-            appear
+        <!-- Next Visit Date -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Next Visit Date (Optional)</label>
+          <input
+            v-model="form.next_visit_date"
+            type="date"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                Next Visit Date
-              </label>
-              <input
-                type="date"
-                v-model="form.next_visit_date"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 hover:border-blue-400"
-              >
-            </div>
-          </transition>
+        </div>
 
-          <!-- Form Actions -->
-          <transition
-            enter-active-class="transition-all duration-600 ease-out"
-            enter-from-class="opacity-0 transform translateY(20px)"
-            enter-to-class="opacity-100 transform translateY(0)"
-            appear
+        <!-- Submit Button -->
+        <div class="flex justify-end space-x-4">
+          <button
+            type="button"
+            @click="$router.push('/visits')"
+            class="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-150 ease-in-out cursor-pointer"
           >
-            <div class="flex justify-end space-x-4 pt-6 border-t border-gray-200">
-              <router-link
-                to="/visits"
-                class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 hover-lift"
-              >
-                Cancel
-              </router-link>
-              <button
-                type="submit"
-                :disabled="submitting"
-                class="px-6 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 hover-lift"
-              >
-                <span v-if="submitting" class="flex items-center">
-                  <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Creating...
-                </span>
-                <span v-else>Create Visit Record</span>
-              </button>
-            </div>
-          </transition>
-        </form>
-      </div>
-    </transition>
+            Cancel
+          </button>
+          <button
+            type="submit"
+            :disabled="loading"
+            class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition duration-150 ease-in-out cursor-pointer"
+          >
+            {{ loading ? 'Saving...' : (isEdit ? 'Update Visit' : 'Create Visit') }}
+          </button>
+        </div>
+      </form>
+    </div>
   </div>
 </template>
 
 <script>
-import { mapState } from 'vuex';
+import { mapState, mapActions } from 'vuex'
+import RichTextEditor from './RichTextEditor.vue'
 
 export default {
   name: 'VisitForm',
+  components: {
+    RichTextEditor
+  },
   data() {
     return {
+      loading: false,
+      isEdit: false,
+      visitId: null,
       form: {
-        school_id: '',
         visit_date: '',
         consultant_name: '',
+        school_id: '',
         context: '',
         activities_undertaken: '',
+        progress: '',
         key_findings: '',
         recommendations: '',
         next_visit_date: ''
       },
-      submitting: false
+      validationErrors: {}
     }
   },
   computed: {
     ...mapState(['schools'])
   },
+  async mounted() {
+    await this.fetchSchools()
+
+    // Check if we're editing
+    if (this.$route.params.id) {
+      this.isEdit = true
+      this.visitId = this.$route.params.id
+      await this.loadVisit()
+    }
+  },
   methods: {
-    async submitForm() {
-      this.submitting = true;
+    ...mapActions(['fetchSchools', 'createVisit', 'updateVisit']),
+
+    async loadVisit() {
       try {
-        const visit = await this.$store.dispatch('createVisit', this.form);
-        this.$router.push(`/visits/${visit.id}`);
+        const response = await fetch(`/api/visits/${this.visitId}`)
+        if (!response.ok) throw new Error('Failed to load visit')
+
+        const visit = await response.json()
+        Object.assign(this.form, {
+          visit_date: visit.visit_date,
+          consultant_name: visit.consultant_name,
+          school_id: visit.school_id,
+          context: visit.context || '',
+          activities_undertaken: visit.activities_undertaken || '',
+          progress: visit.progress || '',
+          key_findings: visit.key_findings || '',
+          recommendations: visit.recommendations || '',
+          next_visit_date: visit.next_visit_date || ''
+        })
       } catch (error) {
-        console.error('Error creating visit:', error);
+        this.$toastr.error('Failed to load visit details')
+      }
+    },
+
+    async submitForm() {
+      this.loading = true
+      // Sanitize rich text fields
+      const sanitize = (val) => {
+        if (!val) return '';
+        const cleaned = val.replace(/<p><br><\/p>/gi, '').replace(/\s+/g, '');
+        return cleaned === '' ? '' : val;
+      };
+      this.form.context = sanitize(this.form.context);
+      this.form.activities_undertaken = sanitize(this.form.activities_undertaken);
+      this.form.progress = sanitize(this.form.progress);
+      this.form.key_findings = sanitize(this.form.key_findings);
+      this.form.recommendations = sanitize(this.form.recommendations);
+      this.validationErrors = {};
+      console.log(this.form);
+      try {
+        let response;
+        if (this.isEdit) {
+          response = await fetch(`/api/visits/${this.visitId}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+              'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify(this.form)
+          });
+        } else {
+          response = await fetch('/api/visits', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+              'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify(this.form)
+          });
+
+          console.log(response);
+        }
+        if (!response.ok) {
+          if (response.status === 422) {
+            const data = await response.json();
+            this.validationErrors = data.errors || {};
+            this.$toastr.error('Please fix the validation errors.');
+            return;
+          }
+          throw new Error('Failed to save visit');
+        }
+        if (this.isEdit) {
+          this.$toastr.success('Visit updated successfully!');
+        } else {
+          this.$toastr.success('Visit created successfully!');
+        }
+        this.$router.push('/visits');
+      } catch (error) {
+        console.log(error);
+        this.$toastr.error('Failed to save visit. Please try again.');
       } finally {
-        this.submitting = false;
+        this.loading = false;
       }
     }
   }

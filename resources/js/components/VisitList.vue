@@ -129,17 +129,17 @@
                       <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
                       </svg>
-                      {{ visit.school.headteacher_name }}
+                      <span class="text-xs text-gray-500">Headmaster: {{ visit.school.headmaster ? visit.school.headmaster.name : 'N/A' }}</span>
                     </div>
                   </div>
                   <div class="mt-2 text-sm text-gray-600 line-clamp-2">
-                    {{ visit.context }}
+                    {{ stripHtmlAndTruncate(visit.context) }}
                   </div>
                 </div>
                 <div class="flex items-center space-x-2">
                   <button
                     @click.stop="downloadPdf(visit.id)"
-                    class="p-2 text-gray-400 hover:text-blue-600 transition-all duration-300 hover-lift"
+                    class="p-2 text-gray-400 hover:text-blue-600 transition-all duration-300 hover-lift cursor-pointer"
                     title="Download PDF"
                   >
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -148,11 +148,22 @@
                   </button>
                   <button
                     @click.stop="copyShareLink(visit.share_token)"
-                    class="p-2 text-gray-400 hover:text-green-600 transition-all duration-300 hover-lift"
+                    class="p-2 text-gray-400 hover:text-green-600 transition-all duration-300 hover-lift cursor-pointer"
                     title="Copy Share Link"
                   >
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"></path>
+                    </svg>
+                  </button>
+
+                  <!-- Change Status Button -->
+                  <button
+                    @click.stop="openStatusModal(visit)"
+                    class="p-2 text-gray-400 hover:text-blue-600 transition-all duration-300 hover-lift cursor-pointer"
+                    title="Change Status"
+                  >
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
                     </svg>
                   </button>
                 </div>
@@ -162,11 +173,78 @@
         </div>
       </div>
     </transition>
+
+    <!-- Status Change Modal -->
+    <div
+      v-if="showStatusModal"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      @click="closeStatusModal"
+    >
+      <div
+        class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4"
+        @click.stop
+      >
+        <div class="p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-gray-900">Change Visit Status</h3>
+            <button
+              @click="closeStatusModal"
+              class="text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+            >
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+
+          <div class="mb-4">
+            <p class="text-sm text-gray-600 mb-2">Current Status:</p>
+            <span
+              :class="getStatusClass(selectedVisit.status)"
+              class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium"
+            >
+              {{ formatStatus(selectedVisit.status) }}
+            </span>
+          </div>
+
+          <div class="space-y-2">
+            <p class="text-sm text-gray-600 mb-3">Select New Status:</p>
+            <button
+              v-for="status in ['draft', 'pending_review', 'approved', 'finalized']"
+              :key="status"
+              @click="updateVisitStatus(selectedVisit.id, status)"
+              :disabled="selectedVisit.status === status"
+              class="w-full text-left p-3 rounded-lg border transition-all duration-200 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              :class="selectedVisit.status === status ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-blue-300'"
+            >
+              <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                  <span
+                    :class="getStatusClass(status)"
+                    class="w-3 h-3 rounded-full mr-3"
+                  ></span>
+                  <span class="font-medium">{{ formatStatus(status) }}</span>
+                </div>
+                <svg
+                  v-if="selectedVisit.status === status"
+                  class="w-5 h-5 text-blue-500"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+              </div>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
-import { mapState } from 'vuex';
+import { mapState, mapActions } from 'vuex';
 
 export default {
   name: 'VisitList',
@@ -174,7 +252,9 @@ export default {
     return {
       search: '',
       statusFilter: '',
-      schoolFilter: ''
+      schoolFilter: '',
+      showStatusModal: false,
+      selectedVisit: null
     }
   },
   computed: {
@@ -182,8 +262,8 @@ export default {
     filteredVisits() {
       return this.visits.filter(visit => {
         const matchesSearch = !this.search ||
-          visit.school.name.toLowerCase().includes(this.search.toLowerCase()) ||
-          visit.consultant_name.toLowerCase().includes(this.search.toLowerCase());
+          (visit.school && visit.school.name && visit.school.name.toLowerCase().includes(this.search.toLowerCase())) ||
+          (visit.consultant_name && visit.consultant_name.toLowerCase().includes(this.search.toLowerCase()));
 
         const matchesStatus = !this.statusFilter || visit.status === this.statusFilter;
         const matchesSchool = !this.schoolFilter || visit.school_id == this.schoolFilter;
@@ -192,7 +272,12 @@ export default {
       });
     }
   },
+    async mounted() {
+    await this.fetchVisits();
+    await this.fetchSchools();
+  },
   methods: {
+    ...mapActions(['fetchVisits', 'fetchSchools']),
     formatDate(date) {
       return new Date(date).toLocaleDateString('en-GB', {
         day: 'numeric',
@@ -201,6 +286,7 @@ export default {
       });
     },
     formatStatus(status) {
+      if (!status) return 'Unknown';
       return status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
     },
     getStatusClass(status) {
@@ -213,7 +299,7 @@ export default {
       return classes[status] || classes.draft;
     },
     downloadPdf(visitId) {
-      window.open(`/api/visits/${visitId}/pdf`, '_blank');
+      window.open(`/visits/${visitId}/pdf`, '_blank');
     },
     async copyShareLink(token) {
       const url = `${window.location.origin}/visits/share/${token}`;
@@ -224,7 +310,38 @@ export default {
         console.error('Failed to copy link:', err);
         this.$toastr.error('Failed to copy share link. Please try again.');
       }
-    }
+    },
+    stripHtmlAndTruncate(text) {
+      if (!text) return '';
+      let html = text;
+      // Remove HTML tags
+      html = html.replace(/<[^>]*>/g, '');
+      // Truncate text to a reasonable length
+      const maxLength = 150; // Adjust as needed
+      if (html.length > maxLength) {
+        return html.substring(0, maxLength) + '...';
+      }
+      return html;
+         },
+     openStatusModal(visit) {
+       this.selectedVisit = visit;
+       this.showStatusModal = true;
+     },
+     closeStatusModal() {
+       this.showStatusModal = false;
+       this.selectedVisit = null;
+     },
+     async updateVisitStatus(visitId, newStatus) {
+       try {
+         await this.$store.dispatch('updateVisitStatus', { visitId, newStatus });
+         this.$toastr.success(`Visit status updated to ${this.formatStatus(newStatus)}!`);
+         this.closeStatusModal();
+       } catch (error) {
+         console.error('Failed to update visit status:', error);
+         this.$toastr.error('Failed to update visit status. Please try again.');
+       }
+     },
+
   }
 }
 </script>

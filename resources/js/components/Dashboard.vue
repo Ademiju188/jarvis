@@ -3,7 +3,7 @@
     <!-- Header -->
     <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg border border-gray-200 hover-lift">
       <div class="p-6 text-gray-900">
-        <h1 class="text-2xl font-semibold text-gray-900 mb-2">Welcome to Education Consultancy Portal</h1>
+        <h1 class="text-2xl font-semibold text-gray-900 mb-2">Welcome to Jarvis Education</h1>
         <p class="text-gray-600">Manage your school visits and create professional records</p>
       </div>
     </div>

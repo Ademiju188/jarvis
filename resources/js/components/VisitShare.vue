@@ -1,5 +1,12 @@
 <template>
-  <div v-if="visit" class="space-y-6">
+  <div v-if="loading" class="flex items-center justify-center min-h-screen">
+    <div class="text-center">
+      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+      <p class="mt-4 text-gray-600">Loading visit details...</p>
+    </div>
+  </div>
+
+  <div v-else-if="visit" class="space-y-6">
     <!-- Header -->
     <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg border border-gray-200 p-6">
       <div class="flex items-center justify-between">
@@ -25,32 +32,38 @@
         <!-- Context -->
         <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg border border-gray-200 p-6">
           <h3 class="text-lg font-semibold text-gray-900 mb-4">Context</h3>
-          <p class="text-gray-700 whitespace-pre-wrap">{{ visit.context }}</p>
+          <div class="text-gray-700" v-html="visit.context"></div>
         </div>
 
         <!-- Activities -->
         <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg border border-gray-200 p-6">
           <h3 class="text-lg font-semibold text-gray-900 mb-4">Activities Undertaken</h3>
-          <p class="text-gray-700 whitespace-pre-wrap">{{ visit.activities_undertaken }}</p>
+          <div class="text-gray-700" v-html="visit.activities_undertaken"></div>
+        </div>
+
+        <!-- Progress -->
+        <div v-if="visit.progress" class="bg-white overflow-hidden shadow-sm sm:rounded-lg border border-gray-200 p-6">
+          <h3 class="text-lg font-semibold text-gray-900 mb-4">Progress towards actions from last visit</h3>
+          <div class="text-gray-700" v-html="visit.progress"></div>
         </div>
 
         <!-- Key Findings -->
         <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg border border-gray-200 p-6">
           <h3 class="text-lg font-semibold text-gray-900 mb-4">Key Findings</h3>
-          <p class="text-gray-700 whitespace-pre-wrap">{{ visit.key_findings }}</p>
+          <div class="text-gray-700" v-html="visit.key_findings"></div>
         </div>
 
         <!-- Recommendations -->
         <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg border border-gray-200 p-6">
           <h3 class="text-lg font-semibold text-gray-900 mb-4">Recommendations & Next Steps</h3>
-          <p class="text-gray-700 whitespace-pre-wrap">{{ visit.recommendations }}</p>
+          <div class="text-gray-700" v-html="visit.recommendations"></div>
         </div>
 
-        <!-- Headteacher Feedback -->
+        <!-- Headmaster Feedback -->
         <div v-if="visit.headteacher_feedback" class="bg-white overflow-hidden shadow-sm sm:rounded-lg border border-gray-200 p-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4">Headteacher Feedback</h3>
+          <h3 class="text-lg font-semibold text-gray-900 mb-4">Headmaster Feedback</h3>
           <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4">
-            <p class="text-gray-700 whitespace-pre-wrap">{{ visit.headteacher_feedback }}</p>
+            <div class="text-gray-700" v-html="visit.headteacher_feedback"></div>
           </div>
         </div>
 
@@ -131,12 +144,12 @@
               <dd class="text-sm text-gray-900">{{ visit.school.name }}</dd>
             </div>
             <div>
-              <dt class="text-sm font-medium text-gray-500">Headteacher</dt>
-              <dd class="text-sm text-gray-900">{{ visit.school.headteacher_name }}</dd>
+              <dt class="text-sm font-medium text-gray-500">Headmaster</dt>
+              <dd class="text-sm text-gray-900">{{ visit.school.headmaster ? visit.school.headmaster.name : 'N/A' }}</dd>
             </div>
             <div>
               <dt class="text-sm font-medium text-gray-500">Email</dt>
-              <dd class="text-sm text-gray-900">{{ visit.school.headteacher_email }}</dd>
+              <dd class="text-sm text-gray-900">{{ visit.school.headmaster ? visit.school.headmaster.email : 'N/A' }}</dd>
             </div>
             <div v-if="visit.school.phone">
               <dt class="text-sm font-medium text-gray-500">Phone</dt>
@@ -176,7 +189,8 @@ export default {
     return {
       visit: null,
       feedback: '',
-      submitting: false
+      submitting: false,
+      loading: true
     }
   },
   async mounted() {
@@ -185,10 +199,59 @@ export default {
   methods: {
     async fetchVisit() {
       try {
-        const response = await fetch(`/api/visits/share/${this.$route.params.token}`);
-        this.visit = await response.json();
+        this.loading = true;
+
+        // First check if user should be redirected (before fetching data)
+        const shouldRedirect = await this.checkAndRedirect();
+
+        // Only fetch visit data if user should see public view
+        if (!shouldRedirect) {
+          const response = await fetch(`/api/visits/share/${this.$route.params.token}`);
+          this.visit = await response.json();
+        }
       } catch (error) {
         console.error('Error fetching visit:', error);
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async checkAndRedirect() {
+      try {
+        // First check if user is a headmaster
+        const userResponse = await fetch('/headmaster/user');
+        if (userResponse.ok) {
+          const user = await userResponse.json();
+
+          // For headmasters, we need to check if this visit belongs to their school
+          // So we need to fetch the visit data temporarily
+          const visitResponse = await fetch(`/api/visits/share/${this.$route.params.token}`);
+          if (visitResponse.ok) {
+            const visit = await visitResponse.json();
+            if (user.school_id === visit.school_id) {
+              this.$router.push(`/visits/${visit.id}`);
+              return true; // Should redirect
+            }
+          }
+        }
+
+        // If not headmaster, check if user is admin by trying to fetch visits
+        const visitsResponse = await fetch('/api/visits');
+        if (visitsResponse.ok) {
+          // User is admin, get visit ID and redirect
+          const visitResponse = await fetch(`/api/visits/share/${this.$route.params.token}`);
+          if (visitResponse.ok) {
+            const visit = await visitResponse.json();
+            this.$router.push(`/visits/${visit.id}`);
+            return true; // Should redirect
+          }
+        }
+
+        return false; // Should not redirect, show public view
+      } catch (error) {
+        // User is not authenticated, continue with public share view
+        console.log('User not authenticated, showing public share view');
+        return false; // Should not redirect, show public view
       }
     },
     formatDate(date) {
@@ -217,14 +280,14 @@ export default {
     async submitFeedback() {
       this.submitting = true;
       try {
-        const response = await fetch(`/api/visits/${this.$route.params.token}/feedback`, {
+        const response = await fetch(`/api/visits/share/${this.$route.params.token}/feedback`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
           },
           body: JSON.stringify({
-            headteacher_feedback: this.feedback
+            headmaster_feedback: this.feedback
           })
         });
 

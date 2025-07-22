@@ -7,13 +7,23 @@ use App\Models\Visit;
 use App\Models\School;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Auth;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class VisitController extends Controller
 {
     public function index(): JsonResponse
     {
-        $visits = Visit::with('school')->orderBy('visit_date', 'desc')->get();
+        $user = Auth::user();
+
+        if ($user->isHeadmaster()) {
+            // Headmaster only sees visits for their school
+            $visits = $user->school->visits()->with('school')->orderBy('visit_date', 'desc')->get();
+        } else {
+            // Admin sees all visits
+            $visits = Visit::with('school')->orderBy('visit_date', 'desc')->get();
+        }
+
         return response()->json($visits);
     }
 
@@ -25,6 +35,7 @@ class VisitController extends Controller
             'consultant_name' => 'required|string|max:255',
             'context' => 'required|string',
             'activities_undertaken' => 'required|string',
+            'progress' => 'nullable|string',
             'key_findings' => 'required|string',
             'recommendations' => 'required|string',
             'next_visit_date' => 'nullable|date',
@@ -38,6 +49,13 @@ class VisitController extends Controller
 
     public function show(Visit $visit): JsonResponse
     {
+        $user = Auth::user();
+
+        // Check if headmaster is trying to access a visit from another school
+        if ($user->isHeadmaster() && $visit->school_id !== $user->school_id) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
         $visit->load('school');
         return response()->json($visit);
     }
@@ -50,11 +68,31 @@ class VisitController extends Controller
             'consultant_name' => 'sometimes|required|string|max:255',
             'context' => 'sometimes|required|string',
             'activities_undertaken' => 'sometimes|required|string',
+            'progress' => 'nullable|string',
             'key_findings' => 'sometimes|required|string',
             'recommendations' => 'sometimes|required|string',
             'next_visit_date' => 'nullable|date',
             'status' => 'sometimes|in:draft,pending_review,approved,finalized',
             'headteacher_feedback' => 'nullable|string',
+        ]);
+
+        $visit->update($validated);
+        $visit->load('school');
+
+        return response()->json($visit);
+    }
+
+    public function updateStatus(Request $request, Visit $visit): JsonResponse
+    {
+        $user = Auth::user();
+
+        // Check if headmaster is trying to access a visit from another school
+        if ($user && $user->role === 'headmaster' && $visit->school_id !== $user->school_id) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $validated = $request->validate([
+            'status' => 'required|in:draft,pending_review,approved,finalized',
         ]);
 
         $visit->update($validated);

@@ -16,6 +16,7 @@ class Visit extends Model
         'consultant_name',
         'context',
         'activities_undertaken',
+        'progress',
         'key_findings',
         'recommendations',
         'next_visit_date',

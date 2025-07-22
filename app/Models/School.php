@@ -34,4 +34,9 @@ class School extends Model
     {
         return $this->hasMany(Visit::class);
     }
+
+    public function headmaster()
+    {
+        return $this->hasOne(User::class)->where('role', 'headmaster');
+    }
 }

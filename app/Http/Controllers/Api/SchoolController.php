@@ -11,7 +11,13 @@ class SchoolController extends Controller
 {
     public function index(): JsonResponse
     {
-        $schools = School::with('visits')->get();
+        $schools = School::with(['visits', 'headmaster'])->get();
+        // Add visits_count and headmaster info to each school
+        $schools = $schools->map(function ($school) {
+            $school->visits_count = $school->visits->count();
+            $school->headmaster = $school->headmaster;
+            return $school;
+        });
         return response()->json($schools);
     }
 
@@ -19,8 +25,8 @@ class SchoolController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'headteacher_name' => 'required|string|max:255',
-            'headteacher_email' => 'required|email|unique:schools',
+            'headmaster_name' => 'required|string|max:255',
+            'headmaster_email' => 'required|email|unique:schools',
             'address' => 'nullable|string',
             'phone' => 'nullable|string',
         ]);
@@ -31,7 +37,9 @@ class SchoolController extends Controller
 
     public function show(School $school): JsonResponse
     {
-        $school->load('visits');
+        $school->load(['visits', 'headmaster']);
+        $school->visits_count = $school->visits->count();
+        $school->headmaster = $school->headmaster;
         return response()->json($school);
     }
 
@@ -39,8 +47,8 @@ class SchoolController extends Controller
     {
         $validated = $request->validate([
             'name' => 'sometimes|required|string|max:255',
-            'headteacher_name' => 'sometimes|required|string|max:255',
-            'headteacher_email' => 'sometimes|required|email|unique:schools,headteacher_email,' . $school->id,
+            'headmaster_name' => 'sometimes|required|string|max:255',
+            'headmaster_email' => 'sometimes|required|email|unique:schools,headmaster_email,' . $school->id,
             'address' => 'nullable|string',
             'phone' => 'nullable|string',
         ]);
@@ -57,12 +65,20 @@ class SchoolController extends Controller
 
     public function getByToken($token): JsonResponse
     {
-        $school = School::where('access_token', $token)->with('visits')->first();
+        $school = School::where('access_token', $token)->with(['visits', 'headmaster'])->first();
 
         if (!$school) {
             return response()->json(['error' => 'School not found'], 404);
         }
+        $school->visits_count = $school->visits->count();
+        $school->headmaster = $school->headmaster;
+        return response()->json($school);
+    }
 
+    public function deleteInvite(School $school): JsonResponse
+    {
+        $school->access_token = null;
+        $school->save();
         return response()->json($school);
     }
 }
