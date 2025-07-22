@@ -5,18 +5,13 @@ namespace App\Models;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, SoftDeletes;
 
-    protected $fillable = [
-        'name',
-        'email',
-        'password',
-        'role', // 'admin' or 'headmaster'
-        'school_id', // for headmasters
-    ];
+    protected $guarded = [];
 
     protected $hidden = [
         'password',
@@ -38,8 +33,8 @@ class User extends Authenticatable
         return $this->role === 'admin';
     }
 
-    public function isHeadmaster()
+    public function isHeadteacher()
     {
-        return $this->role === 'headmaster';
+        return $this->role === 'headteacher';
     }
 }

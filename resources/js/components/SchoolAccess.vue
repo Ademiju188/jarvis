@@ -9,8 +9,8 @@
     <div v-else-if="school" class="space-y-8">
       <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 mb-4">
         <h2 class="text-2xl font-semibold text-gray-900 mb-2">{{ school.name }}</h2>
-        <p class="text-gray-600 mb-1"><span class="font-medium">Headmaster:</span> {{ school.headmaster_name }}</p>
-        <p class="text-gray-600 mb-1"><span class="font-medium">Email:</span> {{ school.headmaster_email }}</p>
+        <p class="text-gray-600 mb-1"><span class="font-medium">Headteacher:</span> {{ school.headteacher_name }}</p>
+        <p class="text-gray-600 mb-1"><span class="font-medium">Email:</span> {{ school.headteacher_email }}</p>
         <p v-if="school.phone" class="text-gray-600 mb-1"><span class="font-medium">Phone:</span> {{ school.phone }}</p>
         <p v-if="school.address" class="text-gray-600"><span class="font-medium">Address:</span> {{ school.address }}</p>
       </div>

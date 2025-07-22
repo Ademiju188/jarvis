@@ -5,15 +5,14 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class School extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'name',
-        'headteacher_name',
-        'headteacher_email',
         'address',
         'phone',
         'access_token',
@@ -35,8 +34,8 @@ class School extends Model
         return $this->hasMany(Visit::class);
     }
 
-    public function headmaster()
+    public function headteacher()
     {
-        return $this->hasOne(User::class)->where('role', 'headmaster');
+        return $this->hasOne(User::class)->where('role', 'headteacher');
     }
 }

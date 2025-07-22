@@ -25,6 +25,7 @@ return new class extends Migration
             $table->text('headteacher_feedback')->nullable();
             $table->string('share_token')->unique()->nullable();
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

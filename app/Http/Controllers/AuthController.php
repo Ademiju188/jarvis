@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
 use App\Models\School;
+use App\Models\Visit;
 
 class AuthController extends Controller
 {
@@ -24,7 +25,7 @@ class AuthController extends Controller
             if ($user->isAdmin()) {
                 return response()->json(['message' => 'Login successful', 'redirect' => '/dashboard']);
             } else {
-                return response()->json(['message' => 'Login successful', 'redirect' => '/headmaster/dashboard']);
+                return response()->json(['message' => 'Login successful', 'redirect' => '/headteacher/dashboard']);
             }
         }
 
@@ -33,7 +34,7 @@ class AuthController extends Controller
         ], 422);
     }
 
-    public function headmasterRegister(Request $request)
+    public function headteacherRegister(Request $request)
     {
         $request->validate([
             'school_name' => 'required|string|max:255',
@@ -47,18 +48,16 @@ class AuthController extends Controller
         // Create school first
         $school = School::create([
             'name' => $request->school_name,
-            'headteacher_name' => $request->headteacher_name,
-            'headteacher_email' => $request->email,
             'phone' => $request->phone,
             'address' => $request->address,
         ]);
 
-        // Create headmaster user
+        // Create headteacher user
         $user = User::create([
             'name' => $request->headteacher_name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'role' => 'headmaster',
+            'role' => 'headteacher',
             'school_id' => $school->id,
         ]);
 
@@ -82,46 +81,123 @@ class AuthController extends Controller
     public function createAdmin()
     {
         // Create default admin user
-        User::create([
-            'name' => 'Super Admin',
-            'email' => 'admin@jarvis.com',
-            'password' => Hash::make('password123'),
-            'role' => 'admin',
-        ]);
+        // User::create([
+        //     'name' => 'Super Admin',
+        //     'email' => 'admin@jarvis.com',
+        //     'password' => Hash::make('password123'),
+        //     'role' => 'admin',
+        // ]);
 
         return 'Admin user created successfully!';
     }
 
-    // Headmaster API endpoints - Only for headmasters
-    public function headmasterUser()
+    /**
+     * Update the authenticated user's profile.
+     */
+    public function updateProfile(Request $request)
     {
         $user = Auth::user();
-        if (!$user || !$user->isHeadmaster()) {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email,' . $user->id,
+            'password' => 'nullable|string|confirmed',
+        ]);
+
+        $user->name = $validated['name'];
+        $user->email = $validated['email'];
+        if (!empty($validated['password'])) {
+            $user->password = bcrypt($validated['password']);
+        }
+        $user->save();
+
+        return response()->json($user);
+    }
+
+    // Headteacher API endpoints - Only for headteachers
+    public function headteacherUser()
+    {
+        $user = Auth::user();
+        if (!$user || !$user->isHeadteacher()) {
             return response()->json(['message' => 'Unauthorized'], 401);
         }
 
         return response()->json($user);
     }
 
-    public function headmasterSchool()
+    public function headteacherSchool()
     {
         $user = Auth::user();
-        if (!$user || !$user->isHeadmaster()) {
+        if (!$user || !$user->isHeadteacher()) {
             return response()->json(['message' => 'Unauthorized'], 401);
         }
 
         return response()->json($user->school);
     }
 
-    public function headmasterVisits()
+    public function headteacherVisits()
     {
         $user = Auth::user();
-        if (!$user || !$user->isHeadmaster()) {
+        if (!$user || !$user->isHeadteacher()) {
             return response()->json(['message' => 'Unauthorized'], 401);
         }
 
-        // Only return visits for the headmaster's school
-        $visits = $user->school->visits()->orderBy('visit_date', 'desc')->get();
+        $visits = Visit::where('school_id', $user->school_id)
+            ->with(['school'])
+            ->orderBy('visit_date', 'desc')
+            ->get();
+
         return response()->json($visits);
+    }
+
+    /**
+     * Get all headteachers for admin dashboard
+     */
+    public function getAllHeadteachers()
+    {
+        $user = Auth::user();
+        if (!$user || !$user->isAdmin()) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
+        $headteachers = User::where('role', 'headteacher')
+            ->with(['school' => function($query) {
+                $query->withCount('visits');
+            }])
+            ->orderBy('name')
+            ->get();
+
+        return response()->json($headteachers);
+    }
+
+    /**
+     * Delete a headteacher
+     */
+    public function deleteHeadteacher(User $headteacher)
+    {
+        $user = Auth::user();
+        if (!$user || !$user->isAdmin()) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
+        if ($headteacher->role !== 'headteacher') {
+            return response()->json(['message' => 'User is not a headteacher'], 400);
+        }
+
+        try {
+            // Delete associated school if it exists
+            if ($headteacher->school) {
+                // Delete all visits for this school
+                Visit::where('school_id', $headteacher->school->id)->delete();
+                // Delete the school
+                $headteacher->school->delete();
+            }
+
+            // Delete the headteacher user
+            $headteacher->delete();
+
+            return response()->json(['message' => 'Headteacher deleted successfully']);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Failed to delete headteacher'], 500);
+        }
     }
 }

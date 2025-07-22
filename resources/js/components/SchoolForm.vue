@@ -9,65 +9,73 @@
       </div>
 
       <form @submit.prevent="submitForm" class="p-6 space-y-6">
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">
-            School Name *
-          </label>
-          <input
-            type="text"
-            v-model="form.name"
-            required
-            placeholder="Enter school name"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors duration-200"
-          >
+        <FormField
+          v-model="form.name"
+          label="School Name"
+          id="school_name"
+          placeholder="Enter school name"
+          :required="true"
+          :error="errors.name"
+        />
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <FormField
+            v-model="form.headteacher_name"
+            label="Headteacher Name"
+            id="headteacher_name"
+            placeholder="Enter headteacher name"
+            :required="true"
+            :error="errors.headteacher_name"
+          />
+          <FormField
+            v-model="form.headteacher_email"
+            label="Headteacher Email"
+            id="headteacher_email"
+            type="email"
+            placeholder="Enter headteacher email"
+            :required="true"
+            :error="errors.headteacher_email"
+          />
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label for="headmaster_name" class="block text-sm font-medium text-gray-700">Headmaster Name *</label>
-            <input
-              v-model="form.headmaster_name"
-              type="text"
-              id="headmaster_name"
-              placeholder="Enter headmaster name"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-          </div>
-          <div>
-            <label for="headmaster_email" class="block text-sm font-medium text-gray-700">Headmaster Email *</label>
-            <input
-              v-model="form.headmaster_email"
-              type="email"
-              id="headmaster_email"
-              placeholder="Enter headmaster email"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-          </div>
+          <FormField
+            v-model="form.phone"
+            label="Phone Number"
+            id="phone"
+            type="tel"
+            placeholder="Enter phone number"
+            :error="errors.phone"
+          />
+          <FormField
+            v-model="form.address"
+            label="Address"
+            id="address"
+            placeholder="Enter school address"
+            :error="errors.address"
+          />
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-              Phone Number
-            </label>
-            <input
-              type="tel"
-              v-model="form.phone"
-              placeholder="Enter phone number"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors duration-200"
-            >
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-              Address
-            </label>
-            <input
-              type="text"
-              v-model="form.address"
-              placeholder="Enter school address"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors duration-200"
-            >
-          </div>
+          <FormField
+            v-model="form.password"
+            label="Password"
+            id="password"
+            type="password"
+            placeholder="Enter password"
+            :required="!isEdit"
+            :error="errors.password"
+            :help-text="isEdit ? 'Leave blank to keep current password' : 'Minimum 8 characters'"
+          />
+          <FormField
+            v-model="form.password_confirmation"
+            label="Password Confirmation"
+            id="password_confirmation"
+            type="password"
+            placeholder="Enter password confirmation"
+            :required="!isEdit"
+            :error="errors.password_confirmation"
+          />
         </div>
 
         <div class="flex justify-end space-x-4 pt-6 border-t border-gray-200">
@@ -99,18 +107,25 @@
 
 <script>
 import toastr from 'toastr';
+import FormField from './FormField.vue';
 
 export default {
   name: 'SchoolForm',
+  components: {
+    FormField
+  },
   data() {
     return {
       form: {
         name: '',
-        headmaster_name: '',
-        headmaster_email: '',
+        headteacher_name: '',
+        headteacher_email: '',
         phone: '',
-        address: ''
+        address: '',
+        password: '',
+        password_confirmation: ''
       },
+      errors: {},
       submitting: false,
       isEdit: false,
       schoolId: null
@@ -122,15 +137,23 @@ export default {
       this.isEdit = true;
       this.schoolId = this.$route.params.id;
       try {
-        const response = await fetch(`/api/schools/${this.schoolId}`);
+        const response = await fetch(`/api/schools/${this.schoolId}`, {
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+          }
+        });
         if (!response.ok) throw new Error('Failed to fetch school');
         const school = await response.json();
         this.form = {
           name: school.name,
-          headmaster_name: school.headmaster_name,
-          headmaster_email: school.headmaster_email,
+          headteacher_name: school.headteacher.name,
+          headteacher_email: school.headteacher.email,
           phone: school.phone || '',
-          address: school.address || ''
+          address: school.address || '',
+          password: '',
+          password_confirmation: ''
         };
       } catch (err) {
         toastr.error('Failed to load school details.');
@@ -139,9 +162,29 @@ export default {
     }
   },
   methods: {
+    clearErrors() {
+      this.errors = {};
+    },
     async submitForm() {
+      this.clearErrors();
       this.submitting = true;
+
       try {
+        // Prepare form data
+        const formData = {
+          name: this.form.name,
+          headteacher_name: this.form.headteacher_name,
+          headteacher_email: this.form.headteacher_email,
+          phone: this.form.phone,
+          address: this.form.address
+        };
+
+        // Only include password fields if provided (for new schools) or if password is entered (for editing)
+        if (!this.isEdit || (this.isEdit && this.form.password)) {
+          formData.password = this.form.password;
+          formData.password_confirmation = this.form.password_confirmation;
+        }
+
         let response;
         if (this.isEdit) {
           response = await fetch(`/api/schools/${this.schoolId}`, {
@@ -151,28 +194,36 @@ export default {
               'Accept': 'application/json',
               'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
             },
-            body: JSON.stringify(this.form)
+            body: JSON.stringify(formData)
           });
         } else {
           response = await fetch('/api/schools', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
+              'Accept': 'application/json',
               'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
             },
-            body: JSON.stringify(this.form)
+            body: JSON.stringify(formData)
           });
         }
+
+        const data = await response.json();
 
         if (response.ok) {
           this.$store.dispatch('fetchSchools');
           toastr.success(this.isEdit ? 'School updated successfully!' : 'School created successfully!');
           this.$router.push('/schools');
         } else {
-          throw new Error('Failed to save school');
+          if (response.status === 422 && data.errors) {
+            this.errors = data.errors;
+            toastr.error('Please fix the validation errors below.');
+          } else {
+            throw new Error(data.message || 'Failed to save school');
+          }
         }
       } catch (error) {
-        toastr.error('Failed to save school. Please try again.');
+        toastr.error(error.message || 'Failed to save school. Please try again.');
       } finally {
         this.submitting = false;
       }

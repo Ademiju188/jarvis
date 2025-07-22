@@ -14,12 +14,15 @@ return new class extends Migration
         Schema::create('schools', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('headteacher_name');
-            $table->string('headteacher_email')->unique();
             $table->string('address')->nullable();
             $table->string('phone')->nullable();
             $table->string('access_token')->unique()->nullable();
             $table->timestamps();
+            $table->softDeletes();
+        });
+
+        Schema::table('users', function (Blueprint $table) {
+            $table->foreignId('school_id')->nullable()->constrained()->onDelete('cascade');
         });
     }
 
@@ -29,5 +32,9 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('schools');
+        Schema::table('users', function (Blueprint $table) {
+            $table->dropForeign(['school_id']);
+            $table->dropColumn('school_id');
+        });
     }
 };

@@ -3,8 +3,8 @@
     <!-- Admin Navigation - Show for admin routes -->
     <AdminNav v-if="isAuthenticated && isAdminRoute && $route.path !== '/login'" />
 
-    <!-- Headmaster Navigation - Show for headmaster routes -->
-    <HeadmasterNav v-if="isAuthenticated && isHeadmasterRoute" />
+    <!-- Headteacher Navigation - Show for headteacher routes -->
+    <HeadteacherNav v-if="isAuthenticated && isHeadteacherRoute" />
 
     <!-- Loading Overlay -->
     <div v-if="loading" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -37,27 +37,30 @@
 <script>
 import { mapState } from 'vuex'
 import AdminNav from './components/AdminNav.vue'
-import HeadmasterNav from './components/HeadmasterNav.vue'
+import HeadteacherNav from './components/HeadteacherNav.vue'
 
 export default {
   name: 'App',
   components: {
     AdminNav,
-    HeadmasterNav
+    HeadteacherNav
   },
   computed: {
     ...mapState(['loading', 'error', 'isAuthenticated']),
     isAdminRoute() {
-      return !this.$route.path.startsWith('/headmaster/')
+      return !this.$route.path.startsWith('/headteacher/')
     },
-    isHeadmasterRoute() {
-      return this.$route.path.startsWith('/headmaster/')
+    isHeadteacherRoute() {
+      return this.$route.path.startsWith('/headteacher/')
     }
   },
   methods: {
     // Global logout method that can be called from navigation components
     async logout() {
       try {
+        // First, refresh the CSRF token
+        await this.refreshCsrfToken();
+
         const response = await fetch('/logout', {
           method: 'POST',
           headers: {
@@ -69,11 +72,33 @@ export default {
 
         // Always redirect to login page regardless of response
         this.$store.commit('SET_AUTHENTICATED', false)
-        window.location.href = '/login'
+        this.$router.push('/login')
       } catch (error) {
         // If there's an error, still redirect to login
         this.$store.commit('SET_AUTHENTICATED', false)
-        window.location.href = '/login'
+        this.$router.push('/login')
+      }
+    },
+
+    async refreshCsrfToken() {
+      try {
+        const response = await fetch('/csrf-token', {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json'
+          }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          // Update the meta tag with the new token
+          const metaTag = document.querySelector('meta[name="csrf-token"]');
+          if (metaTag) {
+            metaTag.setAttribute('content', data.token);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to refresh CSRF token:', error);
       }
     }
   }

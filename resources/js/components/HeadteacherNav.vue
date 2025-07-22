@@ -6,32 +6,11 @@
           <img src="/logo.png" alt="Logo" class="h-8 w-auto">
           <div class="hidden md:flex ml-4 space-x-8">
             <router-link
-              to="/dashboard"
+              to="/headteacher/dashboard"
               class="text-gray-900 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition duration-150 ease-in-out"
               active-class="text-blue-600"
             >
               Dashboard
-            </router-link>
-            <router-link
-              to="/visits"
-              class="text-gray-900 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition duration-150 ease-in-out"
-              active-class="text-blue-600"
-            >
-              Visits
-            </router-link>
-            <router-link
-              to="/schools"
-              class="text-gray-900 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition duration-150 ease-in-out"
-              active-class="text-blue-600"
-            >
-              Schools
-            </router-link>
-            <router-link
-              to="/headteachers"
-              class="text-gray-900 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition duration-150 ease-in-out"
-              active-class="text-blue-600"
-            >
-              HeadTeachers
             </router-link>
           </div>
         </div>
@@ -42,7 +21,7 @@
               @click="userDropdownOpen = !userDropdownOpen"
               class="flex items-center space-x-2 text-gray-900 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition duration-150 ease-in-out cursor-pointer"
             >
-              <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-semibold">
+              <div class="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center text-white text-sm font-semibold">
                 {{ userInitials }}
               </div>
               <span>{{ userName }}</span>
@@ -99,41 +78,17 @@
       <div v-show="mobileMenuOpen" class="md:hidden">
         <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3 border-t border-gray-200 bg-white">
           <router-link
-            to="/dashboard"
+            to="/headteacher/dashboard"
             class="text-gray-900 hover:text-blue-600 block px-3 py-2 rounded-md text-base font-medium transition duration-150 ease-in-out"
             active-class="text-blue-600 bg-blue-50"
             @click="mobileMenuOpen = false"
           >
             Dashboard
           </router-link>
-          <router-link
-            to="/visits"
-            class="text-gray-900 hover:text-blue-600 block px-3 py-2 rounded-md text-base font-medium transition duration-150 ease-in-out"
-            active-class="text-blue-600 bg-blue-50"
-            @click="mobileMenuOpen = false"
-          >
-            Visits
-          </router-link>
-          <router-link
-            to="/schools"
-            class="text-gray-900 hover:text-blue-600 block px-3 py-2 rounded-md text-base font-medium transition duration-150 ease-in-out"
-            active-class="text-blue-600 bg-blue-50"
-            @click="mobileMenuOpen = false"
-          >
-            Schools
-          </router-link>
-          <router-link
-            to="/headteachers"
-            class="text-gray-900 hover:text-blue-600 block px-3 py-2 rounded-md text-base font-medium transition duration-150 ease-in-out"
-            active-class="text-blue-600 bg-blue-50"
-            @click="mobileMenuOpen = false"
-          >
-            HeadTeachers
-          </router-link>
           <div class="border-t border-gray-200 pt-2">
             <div class="px-3 py-2">
               <div class="flex items-center space-x-2 mb-2">
-                <div class="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-semibold">
+                <div class="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center text-white text-sm font-semibold">
                   {{ userInitials }}
                 </div>
                 <span class="text-sm font-medium text-gray-900">{{ userName }}</span>
@@ -168,7 +123,7 @@
 
 <script>
 export default {
-  name: 'AdminNav',
+  name: 'HeadteacherNav',
   data() {
     return {
       mobileMenuOpen: false,

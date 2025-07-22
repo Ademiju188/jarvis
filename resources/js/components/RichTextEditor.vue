@@ -33,8 +33,25 @@ export default {
   },
   beforeDestroy() {
     if (this.editor) {
-      this.editor.off('text-change')
-      this.editor = null
+      this.editor.off('text-change');
+      this.editor.disable();
+      const editorEl = document.getElementById(this.editorId);
+      if (editorEl) {
+        editorEl.innerHTML = '';
+      }
+      this.editor = null;
+    }
+  },
+  // For Vue 3 compatibility
+  beforeUnmount() {
+    if (this.editor) {
+      this.editor.off('text-change');
+      this.editor.disable();
+      const editorEl = document.getElementById(this.editorId);
+      if (editorEl) {
+        editorEl.innerHTML = '';
+      }
+      this.editor = null;
     }
   },
   methods: {

@@ -59,9 +59,9 @@
           <div class="text-gray-700" v-html="visit.recommendations"></div>
         </div>
 
-        <!-- Headmaster Feedback -->
+        <!-- Headteacher Feedback -->
         <div v-if="visit.headteacher_feedback" class="bg-white overflow-hidden shadow-sm sm:rounded-lg border border-gray-200 p-6">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4">Headmaster Feedback</h3>
+          <h3 class="text-lg font-semibold text-gray-900 mb-4">Headteacher Feedback</h3>
           <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4">
             <div class="text-gray-700" v-html="visit.headteacher_feedback"></div>
           </div>
@@ -144,12 +144,12 @@
               <dd class="text-sm text-gray-900">{{ visit.school.name }}</dd>
             </div>
             <div>
-              <dt class="text-sm font-medium text-gray-500">Headmaster</dt>
-              <dd class="text-sm text-gray-900">{{ visit.school.headmaster ? visit.school.headmaster.name : 'N/A' }}</dd>
+              <dt class="text-sm font-medium text-gray-500">Headteacher</dt>
+              <dd class="text-sm text-gray-900">{{ visit.school.headteacher ? visit.school.headteacher.name : 'N/A' }}</dd>
             </div>
             <div>
               <dt class="text-sm font-medium text-gray-500">Email</dt>
-              <dd class="text-sm text-gray-900">{{ visit.school.headmaster ? visit.school.headmaster.email : 'N/A' }}</dd>
+              <dd class="text-sm text-gray-900">{{ visit.school.headteacher ? visit.school.headteacher.email : 'N/A' }}</dd>
             </div>
             <div v-if="visit.school.phone">
               <dt class="text-sm font-medium text-gray-500">Phone</dt>
@@ -218,24 +218,24 @@ export default {
 
     async checkAndRedirect() {
       try {
-        // First check if user is a headmaster
-        const userResponse = await fetch('/headmaster/user');
+        // First check if user is a headteacher
+        const userResponse = await fetch('/headteacher/user');
         if (userResponse.ok) {
           const user = await userResponse.json();
 
-          // For headmasters, we need to check if this visit belongs to their school
+          // For headteachers, we need to check if this visit belongs to their school
           // So we need to fetch the visit data temporarily
           const visitResponse = await fetch(`/api/visits/share/${this.$route.params.token}`);
           if (visitResponse.ok) {
             const visit = await visitResponse.json();
             if (user.school_id === visit.school_id) {
-              this.$router.push(`/visits/${visit.id}`);
+              this.$router.push(`/headteacher/visits/${visit.id}`);
               return true; // Should redirect
             }
           }
         }
 
-        // If not headmaster, check if user is admin by trying to fetch visits
+        // If not headteacher, check if user is admin by trying to fetch visits
         const visitsResponse = await fetch('/api/visits');
         if (visitsResponse.ok) {
           // User is admin, get visit ID and redirect
@@ -251,6 +251,7 @@ export default {
       } catch (error) {
         // User is not authenticated, continue with public share view
         console.log('User not authenticated, showing public share view');
+        this.$router.push(`/login`);
         return false; // Should not redirect, show public view
       }
     },
@@ -287,7 +288,7 @@ export default {
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
           },
           body: JSON.stringify({
-            headmaster_feedback: this.feedback
+            headteacher_feedback: this.feedback
           })
         });
 

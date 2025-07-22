@@ -17,39 +17,25 @@
         </div>
 
         <form @submit.prevent="login" class="space-y-6">
-          <div>
-            <label for="email" class="block text-sm font-medium text-gray-700">
-              Email Address
-            </label>
-            <div class="mt-1">
-              <input
-                id="email"
-                v-model="form.email"
-                name="email"
-                type="email"
-                required
-                class="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="Enter your email"
-              >
-            </div>
-          </div>
+          <FormField
+            v-model="form.email"
+            label="Email Address"
+            id="email"
+            type="email"
+            placeholder="Enter your email"
+            :required="true"
+            :error="errors.email"
+          />
 
-          <div>
-            <label for="password" class="block text-sm font-medium text-gray-700">
-              Password
-            </label>
-            <div class="mt-1">
-              <input
-                id="password"
-                v-model="form.password"
-                name="password"
-                type="password"
-                required
-                class="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="Enter your password"
-              >
-            </div>
-          </div>
+          <FormField
+            v-model="form.password"
+            label="Password"
+            id="password"
+            type="password"
+            placeholder="Enter your password"
+            :required="true"
+            :error="errors.password"
+          />
 
           <div>
             <button
@@ -83,22 +69,52 @@
 </template>
 
 <script>
+import FormField from './FormField.vue'
+
 export default {
   name: 'Login',
+  components: {
+    FormField
+  },
   data() {
     return {
       loading: false,
       error: null,
+      errors: {},
       form: {
         email: '',
         password: ''
       }
     }
   },
+  async created() {
+    // If already authenticated, redirect to dashboard or headteacher dashboard
+    try {
+      const response = await fetch('/api/user');
+      if (response.ok) {
+        // Headteacher is logged in
+        this.$router.push('/headteacher/dashboard');
+        return;
+      }
+    } catch {}
+    try {
+      const response = await fetch('/api/visits', { method: 'HEAD' });
+      if (response.ok) {
+        // Admin is logged in
+        this.$router.push('/dashboard');
+        return;
+      }
+    } catch {}
+    // Otherwise, stay on login page
+  },
   methods: {
+    clearErrors() {
+      this.errors = {};
+      this.error = null;
+    },
     async login() {
       this.loading = true
-      this.error = null
+      this.clearErrors()
 
       try {
         // First, refresh the CSRF token
@@ -127,7 +143,12 @@ export default {
             this.$router.push('/dashboard')
           }
         } else {
-          this.error = data.message || 'Invalid credentials. Please try again.'
+          if (response.status === 422 && data.errors) {
+            this.errors = data.errors;
+            this.error = 'Please fix the validation errors below.';
+          } else {
+            this.error = data.message || 'Invalid credentials. Please try again.'
+          }
         }
       } catch (error) {
         this.error = 'An error occurred. Please try again.'

@@ -6,8 +6,8 @@ import App from './App.vue';
 
 // Import components
 import Login from './components/Login.vue';
-import HeadmasterRegister from './components/HeadmasterRegister.vue';
-import HeadmasterDashboard from './components/HeadmasterDashboard.vue';
+import HeadteacherRegister from './components/HeadteacherRegister.vue';
+import HeadteacherDashboard from './components/HeadteacherDashboard.vue';
 import Dashboard from './components/Dashboard.vue';
 import VisitList from './components/VisitList.vue';
 import VisitForm from './components/VisitForm.vue';
@@ -17,6 +17,9 @@ import SchoolList from './components/SchoolList.vue';
 import SchoolForm from './components/SchoolForm.vue';
 import SchoolAccess from './components/SchoolAccess.vue';
 import RichTextEditor from './components/RichTextEditor.vue';
+import HeadteacherVisitView from './components/HeadteacherVisitView.vue';
+import HeadTeacherList from './components/HeadTeacherList.vue';
+import Profile from './components/Profile.vue';
 
 // Import Toastr
 import 'toastr/build/toastr.min.css';
@@ -210,18 +213,21 @@ const store = createStore({
 // Vue Router
 const routes = [
     { path: '/login', component: Login },
-    { path: '/register', component: HeadmasterRegister },
-    { path: '/headmaster/dashboard', component: HeadmasterDashboard },
+    { path: '/register', component: HeadteacherRegister },
+    { path: '/profile', component: Profile },
+    { path: '/headteacher/dashboard', component: HeadteacherDashboard },
     { path: '/dashboard', component: Dashboard },
     { path: '/visits', component: VisitList },
     { path: '/visits/create', component: VisitForm },
     { path: '/visits/:id', component: VisitView },
     { path: '/visits/:id/edit', component: VisitForm },
     { path: '/visits/share/:token', component: VisitShare },
+    { path: '/headteacher/visits/:id', component: HeadteacherVisitView },
     { path: '/schools', component: SchoolList },
     { path: '/schools/create', component: SchoolForm },
     { path: '/schools/:id/edit', component: SchoolForm },
     { path: '/schools/token/:token', component: SchoolAccess },
+    { path: '/headteachers', component: HeadTeacherList },
     { path: '/', redirect: '/dashboard' }
 ];
 
@@ -232,9 +238,9 @@ const router = createRouter({
 
 // Global error handler for authentication errors
 function handleAuthError(status) {
-    if (status === 401 || status === 422) {
+    if (status === 401 || status === 422 || status === 302) {
         store.commit('SET_AUTHENTICATED', false);
-        // Redirect to login page
+        // Redirect to SPA entry (login page)
         if (router.currentRoute.value.path !== '/login') {
             router.push('/login');
         }
@@ -245,17 +251,69 @@ function handleAuthError(status) {
 
 // Navigation guard to check authentication
 router.beforeEach(async (to, from, next) => {
-    // Skip auth check for public routes
+    // Always allow access to /login and /register for unauthenticated users
     if (to.path === '/login' || to.path === '/register' || to.path.startsWith('/visits/share/') || to.path.startsWith('/schools/token/')) {
+        try {
+            const response = await fetch('/api/user');
+            let user = undefined;
+            if (response.ok) {
+                try {
+                    user = await response.json();
+                } catch (e) {
+                    user = undefined;
+                }
+            }
+            if (response.status === 302 || user === undefined || user === null) {
+                store.commit('SET_AUTHENTICATED', false);
+                return next();
+            }
+            store.commit('SET_AUTHENTICATED', true);
+            if (to.path === '/login' || to.path === '/register') {
+                if (user.role === 'admin') {
+                    return next('/dashboard');
+                } else if (user.role === 'headteacher') {
+                    return next('/headteacher/dashboard');
+                }
+            }
+        } catch {
+            store.commit('SET_AUTHENTICATED', false);
+        }
         return next();
     }
 
-    // Check if user is authenticated
-    const isAuthenticated = await store.dispatch('checkAuth');
-    if (!isAuthenticated) {
-        return next('/login');
+    // For all other routes, require authentication and check role
+    try {
+        const response = await fetch('/api/user');
+        let user = undefined;
+        if (response.ok) {
+            try {
+                user = await response.json();
+            } catch (e) {
+                user = undefined;
+            }
+        }
+        if (response.status === 302 || user === undefined || user === null) {
+            store.commit('SET_AUTHENTICATED', false);
+            if (to.path !== '/login') {
+                return next('/login');
+            } else {
+                return next();
+            }
+        }
+        store.commit('SET_AUTHENTICATED', true);
+        // Prevent headteachers from accessing admin-only routes
+        if (user.role === 'headteacher' && !to.path.startsWith('/headteacher/')) {
+            return next('/headteacher/dashboard');
+        }
+        return next();
+    } catch {
+        store.commit('SET_AUTHENTICATED', false);
+        if (to.path !== '/login') {
+            return next('/login');
+        } else {
+            return next();
+        }
     }
-    next();
 });
 
 // Create and mount the app

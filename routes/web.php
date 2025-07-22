@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Api\SchoolController;
 use App\Http\Controllers\Api\VisitController;
+use Illuminate\Support\Facades\Auth;
 
 // CSRF token route
 Route::get('/csrf-token', function () {
@@ -14,8 +15,8 @@ Route::get('/csrf-token', function () {
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/logout', [AuthController::class, 'logout'])->name('admin.logout');
 
-// Headmaster registration route
-Route::post('/headmaster/register', [AuthController::class, 'headmasterRegister']);
+// Headteacher registration route
+Route::post('/headteacher/register', [AuthController::class, 'headteacherRegister']);
 
 // Create admin user (remove this route after creating admin)
 Route::get('/create-admin', [AuthController::class, 'createAdmin']);
@@ -25,31 +26,47 @@ Route::get('/schools/token/{token}', [SchoolController::class, 'getByToken'])->n
 Route::post('/visits/{visit}/feedback', [VisitController::class, 'submitFeedback'])->name('visit.feedback');
 Route::get('/visits/{visit}/pdf', [VisitController::class, 'generatePdf'])->name('visit.pdf');
 
-// Protected routes (both admin and headmaster)
+// Protected routes (both admin and headteacher)
 Route::middleware(['auth'])->group(function () {
-    // Headmaster API routes
-    Route::get('/headmaster/user', [AuthController::class, 'headmasterUser']);
-    Route::get('/headmaster/school', [AuthController::class, 'headmasterSchool']);
-    Route::get('/headmaster/visits', [AuthController::class, 'headmasterVisits']);
+    // Headteacher API routes
+    Route::get('/headteacher/user', [AuthController::class, 'headteacherUser']);
+    Route::get('/headteacher/school', [AuthController::class, 'headteacherSchool']);
+    Route::get('/headteacher/visits', [AuthController::class, 'headteacherVisits']);
 
-    // Admin API routes
+    // API routes for authenticated users
     Route::prefix('api')->group(function () {
         Route::apiResource('schools', SchoolController::class);
         Route::apiResource('visits', VisitController::class);
         Route::put('/visits/{visit}/status', [VisitController::class, 'updateStatus']);
         Route::delete('/schools/{school}/invite', [SchoolController::class, 'deleteInvite']);
+        Route::post('/visits/{visit}/feedback', [VisitController::class, 'submitFeedbackById']);
+        Route::get('/visits/share/{token}', [VisitController::class, 'getByShareToken'])->name('visit.share.api');
+        Route::post('/visits/share/{token}/feedback', [VisitController::class, 'submitFeedback'])->name('visit.feedback.api');
+
+        // Headteacher management routes
+        Route::get('/headteachers', [AuthController::class, 'getAllHeadteachers']);
+        Route::delete('/headteachers/{headteacher}', [AuthController::class, 'deleteHeadteacher']);
+    });
+
+    // Dashboard routes
+    Route::get('/headteacher/dashboard', function () {
+        return view('app');
+    })->name('headteacher.dashboard');
+});
+
+// Admin-only routes
+Route::middleware(['auth', 'admin.only'])->group(function () {
+    Route::get('/dashboard', function () {
+        return view('app');
     });
 });
 
-// Public API routes (no authentication required)
-Route::get('/api/visits/share/{token}', [VisitController::class, 'getByShareToken'])->name('visit.share.api');
-Route::post('/api/visits/share/{token}/feedback', [VisitController::class, 'submitFeedback'])->name('visit.feedback.api');
-
 // Vue.js SPA routes (specific routes first)
-Route::get('/headmaster/dashboard', function () {
+Route::get('/register', function () {
     return view('app');
-});
+})->name('register');
 
+// Vue.js SPA route (catch-all for all other Vue routes)
 Route::get('/visits/share/{token}', function () {
     return view('app');
 })->name('visit.share');
@@ -58,3 +75,11 @@ Route::get('/visits/share/{token}', function () {
 Route::get('/{any}', function () {
     return view('app');
 })->where('any', '^(?!api).*$');
+
+// Authenticated user info for SPA auth check
+Route::middleware('auth')->get('/api/user', function () {
+    return response()->json(Auth::user());
+});
+
+// Profile update route for authenticated users
+Route::middleware('auth')->put('/api/user/profile', [AuthController::class, 'updateProfile']);

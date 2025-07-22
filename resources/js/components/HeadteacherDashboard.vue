@@ -21,10 +21,10 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <p class="text-sm text-blue-700"><strong>School:</strong> {{ school?.name }}</p>
-            <p class="text-sm text-blue-700"><strong>Headmaster:</strong> {{ school?.headmaster_name }}</p>
+            <p class="text-sm text-blue-700"><strong>Headteacher:</strong> {{ user?.name }}</p>
           </div>
           <div>
-            <p class="text-sm text-blue-700"><strong>Email:</strong> {{ school?.headmaster_email }}</p>
+            <p class="text-sm text-blue-700"><strong>Email:</strong> {{ user?.email }}</p>
             <p class="text-sm text-blue-700"><strong>Phone:</strong> {{ school?.phone || 'Not provided' }}</p>
           </div>
         </div>
@@ -124,7 +124,7 @@
                   Consultant: {{ visit.consultant_name }}
                 </p>
                 <p class="text-sm text-gray-600">
-                  Context: {{ visit.context ? visit.context.substring(0, 100) + '...' : 'No context provided' }}
+                  Context: {{ visit.context ? stripHtmlAndTruncate(visit.context, 100) : 'No context provided' }}
                 </p>
               </div>
               <div class="flex space-x-2">
@@ -151,7 +151,7 @@
 
 <script>
 export default {
-  name: 'HeadmasterDashboard',
+  name: 'HeadteacherDashboard',
   data() {
     return {
       loading: true,
@@ -179,7 +179,7 @@ export default {
         this.error = null
 
         // Load user and school data
-        const userResponse = await fetch('/headmaster/user')
+        const userResponse = await fetch('/api/user')
         if (!userResponse.ok) {
           if (userResponse.status === 401 || userResponse.status === 422) {
             this.$store.commit('SET_AUTHENTICATED', false);
@@ -190,7 +190,7 @@ export default {
         }
         this.user = await userResponse.json()
 
-        const schoolResponse = await fetch('/headmaster/school')
+        const schoolResponse = await fetch('/headteacher/school')
         if (!schoolResponse.ok) {
           if (schoolResponse.status === 401 || schoolResponse.status === 422) {
             this.$store.commit('SET_AUTHENTICATED', false);
@@ -202,7 +202,7 @@ export default {
         this.school = await schoolResponse.json()
 
         // Load visits for this school only
-        const visitsResponse = await fetch('/headmaster/visits')
+        const visitsResponse = await fetch('/headteacher/visits')
         if (!visitsResponse.ok) {
           if (visitsResponse.status === 401 || visitsResponse.status === 422) {
             this.$store.commit('SET_AUTHENTICATED', false);
@@ -250,6 +250,13 @@ export default {
         finalized: 'bg-blue-100 text-blue-800'
       }
       return classMap[status] || 'bg-gray-100 text-gray-800'
+    },
+
+    stripHtmlAndTruncate(html, maxLength = 100) {
+      const tmp = document.createElement('div');
+      tmp.innerHTML = html;
+      const text = tmp.textContent || tmp.innerText || '';
+      return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
     },
 
     async logout() {

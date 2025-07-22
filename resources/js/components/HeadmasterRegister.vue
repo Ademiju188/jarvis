@@ -4,7 +4,7 @@
       <div class="text-center">
         <img class="mx-auto h-16 w-auto" src="/logo.png" alt="Jarvis Logo">
         <h2 class="mt-6 text-3xl font-extrabold text-gray-900">
-          Headmaster Registration
+          Headteacher Registration
         </h2>
         <p class="mt-2 text-sm text-gray-600">
           Register your school to access visit records
@@ -39,15 +39,15 @@
           </div>
 
           <div>
-            <label for="headmaster_name" class="block text-sm font-medium text-gray-700">Headmaster Name</label>
+            <label for="headteacher_name" class="block text-sm font-medium text-gray-700">Headteacher Name</label>
             <input
-              id="headmaster_name"
-              v-model="form.headmaster_name"
-              name="headmaster_name"
+              id="headteacher_name"
+              v-model="form.headteacher_name"
+              name="headteacher_name"
               type="text"
               autocomplete="name"
               required
-              placeholder="Enter headmaster name"
+              placeholder="Enter headteacher name"
               class="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
             >
           </div>
@@ -168,7 +168,7 @@
 
 <script>
 export default {
-  name: 'HeadmasterRegister',
+  name: 'HeadteacherRegister',
   data() {
     return {
       loading: false,
@@ -176,7 +176,7 @@ export default {
       success: null,
       form: {
         school_name: '',
-        headmaster_name: '',
+        headteacher_name: '',
         email: '',
         password: '',
         password_confirmation: '',
@@ -199,7 +199,7 @@ export default {
       }
 
       try {
-        const response = await fetch('/headmaster/register', {
+        const response = await fetch('/headteacher/register', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -215,7 +215,7 @@ export default {
           this.success = 'Registration successful! You can now log in.'
           this.form = {
             school_name: '',
-            headmaster_name: '',
+            headteacher_name: '',
             email: '',
             password: '',
             password_confirmation: '',

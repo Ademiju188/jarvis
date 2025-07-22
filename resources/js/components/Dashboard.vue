@@ -9,7 +9,7 @@
     </div>
 
     <!-- Statistics Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
       <transition
         enter-active-class="transition-all duration-500 ease-out"
         enter-from-class="opacity-0 transform translateY(20px) scale(0.9)"
@@ -104,6 +104,31 @@
               <div class="ml-4">
                 <p class="text-sm font-medium text-gray-500">Finalized</p>
                 <p class="text-2xl font-bold text-gray-900">{{ finalizedVisits.length }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </transition>
+
+      <transition
+        enter-active-class="transition-all duration-500 ease-out"
+        enter-from-class="opacity-0 transform translateY(20px) scale(0.9)"
+        enter-to-class="opacity-100 transform translateY(0) scale(1)"
+        appear
+      >
+        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg border border-gray-200 hover-lift" style="animation-delay: 0.5s;">
+          <div class="p-6">
+            <div class="flex items-center">
+              <div class="flex-shrink-0">
+                <div class="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
+                  <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                  </svg>
+                </div>
+              </div>
+              <div class="ml-4">
+                <p class="text-sm font-medium text-gray-500">HeadTeachers</p>
+                <p class="text-2xl font-bold text-gray-900">{{ headteachersCount }}</p>
               </div>
             </div>
           </div>
@@ -235,9 +260,40 @@ import { mapState, mapGetters } from 'vuex';
 
 export default {
   name: 'Dashboard',
+  data() {
+    return {
+      headteachers: []
+    }
+  },
   computed: {
     ...mapState(['visits', 'schools']),
-    ...mapGetters(['pendingVisits', 'finalizedVisits', 'recentVisits'])
+    ...mapGetters(['pendingVisits', 'finalizedVisits', 'recentVisits']),
+
+    headteachersCount() {
+      return this.headteachers.length;
+    }
+  },
+  async mounted() {
+    // Prevent headteachers from accessing this dashboard
+    try {
+      const response = await fetch('/api/user');
+      let user = undefined;
+      if (response.ok) {
+        try {
+          user = await response.json();
+        } catch (e) {
+          user = undefined;
+        }
+      }
+      if (!user || user.role !== 'admin') {
+        this.$router.push('/headteacher/dashboard');
+      } else {
+        // Load headteachers count
+        await this.loadHeadteachersCount();
+      }
+    } catch {
+      this.$router.push('/login');
+    }
   },
   methods: {
     formatDate(date) {
@@ -255,6 +311,17 @@ export default {
         finalized: 'bg-blue-100 text-blue-800'
       };
       return classes[status] || classes.draft;
+    },
+
+    async loadHeadteachersCount() {
+      try {
+        const response = await fetch('/api/headteachers');
+        if (response.ok) {
+          this.headteachers = await response.json();
+        }
+      } catch (error) {
+        console.error('Error loading headteachers count:', error);
+      }
     }
   }
 }

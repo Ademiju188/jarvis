@@ -9,15 +9,17 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Models\User;
 
 class VisitController extends Controller
 {
     public function index(): JsonResponse
     {
+        /** @var User|null $user */
         $user = Auth::user();
 
-        if ($user->isHeadmaster()) {
-            // Headmaster only sees visits for their school
+        if ($user->isHeadteacher()) {
+            // Headteacher only sees visits for their school
             $visits = $user->school->visits()->with('school')->orderBy('visit_date', 'desc')->get();
         } else {
             // Admin sees all visits
@@ -49,10 +51,11 @@ class VisitController extends Controller
 
     public function show(Visit $visit): JsonResponse
     {
+        /** @var User|null $user */
         $user = Auth::user();
 
-        // Check if headmaster is trying to access a visit from another school
-        if ($user->isHeadmaster() && $visit->school_id !== $user->school_id) {
+        // Check if headteacher is trying to access a visit from another school
+        if ($user->isHeadteacher() && $visit->school_id !== $user->school_id) {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
@@ -86,8 +89,8 @@ class VisitController extends Controller
     {
         $user = Auth::user();
 
-        // Check if headmaster is trying to access a visit from another school
-        if ($user && $user->role === 'headmaster' && $visit->school_id !== $user->school_id) {
+        // Check if headteacher is trying to access a visit from another school
+        if ($user && $user->role === 'headteacher' && $visit->school_id !== $user->school_id) {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
@@ -145,5 +148,23 @@ class VisitController extends Controller
         ]);
 
         return response()->json(['message' => 'Feedback submitted successfully']);
+    }
+
+    public function submitFeedbackById(Request $request, Visit $visit): JsonResponse
+    {
+        /** @var User|null $user */
+        $user = Auth::user();
+        if ($user && $user->isHeadteacher() && $visit->school_id !== $user->school_id) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+        $validated = $request->validate([
+            'headteacher_feedback' => 'required|string',
+        ]);
+        $visit->update([
+            'headteacher_feedback' => $validated['headteacher_feedback'],
+            'status' => 'pending_review',
+        ]);
+        $visit->load('school');
+        return response()->json(['message' => 'Feedback submitted successfully', 'visit' => $visit]);
     }
 }
