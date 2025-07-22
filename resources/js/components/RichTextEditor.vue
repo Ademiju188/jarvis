@@ -29,33 +29,45 @@ export default {
     }
   },
   mounted() {
-    this.initEditor()
+    this.$nextTick(() => {
+      this.initEditor()
+    })
   },
   beforeDestroy() {
-    if (this.editor) {
-      this.editor.off('text-change');
-      this.editor.disable();
-      const editorEl = document.getElementById(this.editorId);
-      if (editorEl) {
-        editorEl.innerHTML = '';
-      }
-      this.editor = null;
-    }
+    this.destroyEditor()
   },
   // For Vue 3 compatibility
   beforeUnmount() {
-    if (this.editor) {
-      this.editor.off('text-change');
-      this.editor.disable();
-      const editorEl = document.getElementById(this.editorId);
-      if (editorEl) {
-        editorEl.innerHTML = '';
-      }
-      this.editor = null;
-    }
+    this.destroyEditor()
   },
   methods: {
+    destroyEditor() {
+      if (this.editor) {
+        try {
+          this.editor.off('text-change')
+          this.editor.disable()
+          const editorEl = document.getElementById(this.editorId)
+          if (editorEl) {
+            editorEl.innerHTML = ''
+          }
+        } catch (error) {
+          console.warn('Error destroying Quill editor:', error)
+        } finally {
+          this.editor = null
+        }
+      }
+    },
     initEditor() {
+      // Check if DOM element exists
+      const editorElement = document.getElementById(this.editorId)
+      if (!editorElement) {
+        console.warn('Editor element not found:', this.editorId)
+        return
+      }
+
+      // Destroy existing editor if it exists
+      this.destroyEditor()
+
       const toolbarOptions = [
         ['bold', 'italic', 'underline', 'strike'],
         ['blockquote', 'code-block'],
@@ -73,39 +85,58 @@ export default {
         ['link', 'image', 'video']
       ]
 
-      this.editor = new Quill(`#${this.editorId}`, {
-        theme: 'snow',
-        placeholder: this.placeholder,
-        modules: {
-          toolbar: toolbarOptions
-        }
-      })
+      try {
+        this.editor = new Quill(`#${this.editorId}`, {
+          theme: 'snow',
+          placeholder: this.placeholder,
+          modules: {
+            toolbar: toolbarOptions
+          }
+        })
 
-      // Set initial content
-      this.setContent(this.value)
+        // Ensure editor is enabled
+        this.editor.enable()
 
-      // Listen for content changes
-      this.editor.on('text-change', () => {
-        if (this.ignoreChange) {
-          this.ignoreChange = false
-          return
-        }
-        const html = this.editor.root.innerHTML
-        const normalized = this.normalizeEmptyContent(html)
-        if (normalized !== this.content) {
-          this.content = normalized
-        //   console.log('RichTextEditor value:', normalized)
-          this.$emit('input', normalized) // Vue 2
-          this.$emit('update:modelValue', normalized) // Vue 3
-        }
-      })
+        // Set initial content after a brief delay to ensure DOM is ready
+        this.$nextTick(() => {
+          if (this.editor) {
+            this.setContent(this.value)
+          }
+        })
+
+        // Listen for content changes
+        this.editor.on('text-change', () => {
+          if (this.ignoreChange || !this.editor) {
+            this.ignoreChange = false
+            return
+          }
+          const html = this.editor.root.innerHTML
+          const normalized = this.normalizeEmptyContent(html)
+          if (normalized !== this.content) {
+            this.content = normalized
+            this.$emit('update:value', normalized) // Vue 3
+            this.$emit('input', normalized) // Vue 2 compatibility
+          }
+        })
+      } catch (error) {
+        console.error('Error initializing Quill editor:', error)
+        this.editor = null
+      }
     },
     setContent(html) {
-      if (this.editor) {
-        this.ignoreChange = true
-        const content = this.normalizeEmptyContent(html)
-        this.editor.clipboard.dangerouslyPasteHTML(content || '')
-        this.content = content
+      if (this.editor && this.editor.root) {
+        try {
+          this.ignoreChange = true
+          const content = this.normalizeEmptyContent(html)
+          this.editor.clipboard.dangerouslyPasteHTML(content || '')
+          this.content = content
+          this.ignoreChange = false
+        } catch (error) {
+          console.warn('Error setting content in Quill editor:', error)
+          this.ignoreChange = false
+        }
+      } else {
+        console.warn('RichTextEditor setContent called but editor not ready:', this.editorId)
       }
     },
     normalizeEmptyContent(html) {
@@ -121,14 +152,16 @@ export default {
     }
   },
   watch: {
-    value(newValue) {
-        console.log('Value changed:', newValue)
-      const normalizedNew = this.normalizeEmptyContent(newValue)
-      const normalizedCurrent = this.content
+    value: {
+      handler(newValue, oldValue) {
+        const normalizedNew = this.normalizeEmptyContent(newValue)
+        const normalizedCurrent = this.normalizeEmptyContent(this.content)
 
-      if (normalizedNew !== normalizedCurrent) {
-        this.setContent(newValue)
-      }
+        if (normalizedNew !== normalizedCurrent) {
+          this.setContent(newValue)
+        }
+      },
+      immediate: true
     }
   }
 }
@@ -137,6 +170,7 @@ export default {
 <style scoped>
 .rich-text-editor {
     width: 100%;
+    position: relative;
 }
 
 .quill-editor {
@@ -147,6 +181,8 @@ export default {
     min-height: 200px;
     font-size: 14px;
     line-height: 1.6;
+    cursor: text;
+    outline: none;
 }
 
 :deep(.ql-toolbar) {
@@ -155,6 +191,8 @@ export default {
     border-right: 1px solid #ccc;
     border-bottom: none;
     border-radius: 4px 4px 0 0;
+    background: white;
+    z-index: 1;
 }
 
 :deep(.ql-container) {
@@ -163,6 +201,7 @@ export default {
     border-right: 1px solid #ccc;
     border-top: none;
     border-radius: 0 0 4px 4px;
+    background: white;
 }
 
 :deep(.ql-editor:focus) {
@@ -176,5 +215,18 @@ export default {
 
 :deep(.ql-container:focus-within) {
     border-color: #3b82f6;
+}
+
+:deep(.ql-editor.ql-blank::before) {
+    color: #9ca3af;
+    font-style: italic;
+}
+
+:deep(.ql-editor p) {
+    margin-bottom: 0.5rem;
+}
+
+:deep(.ql-editor p:last-child) {
+    margin-bottom: 0;
 }
 </style>

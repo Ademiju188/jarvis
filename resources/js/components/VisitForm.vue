@@ -38,7 +38,7 @@
                         Context <span class="text-red-500">*</span>
                     </label>
                     <div class="mt-1">
-                        <RichTextEditor v-model="form.context" :key="'context-' + (visitId || 'new') + '-' + isEdit"
+                        <RichTextEditor v-model:value="form.context" :key="'context-' + (visitId || 'new') + '-' + isEdit"
                             placeholder="Describe the context and purpose of this visit..." />
                         <div v-if="validationErrors.context" class="text-red-600 text-sm mt-1">
                             {{ validationErrors.context[0] }}
@@ -51,7 +51,7 @@
                         Activities Undertaken <span class="text-red-500">*</span>
                     </label>
                     <div class="mt-1">
-                        <RichTextEditor v-model="form.activities_undertaken"
+                        <RichTextEditor v-model:value="form.activities_undertaken"
                             :key="'activities-' + (visitId || 'new') + '-' + isEdit"
                             placeholder="Describe the activities undertaken..." />
                         <div v-if="validationErrors.activities_undertaken" class="text-red-600 text-sm mt-1">
@@ -65,7 +65,7 @@
                         Progress towards actions from last visit (if applicable)
                     </label>
                     <div class="mt-1">
-                        <RichTextEditor v-model="form.progress" :key="'progress-' + (visitId || 'new') + '-' + isEdit"
+                        <RichTextEditor v-model:value="form.progress" :key="'progress-' + (visitId || 'new') + '-' + isEdit"
                             placeholder="Describe the progress..." />
                         <div v-if="validationErrors.progress" class="text-red-600 text-sm mt-1">
                             {{ validationErrors.progress[0] }}
@@ -78,7 +78,7 @@
                         Key Findings <span class="text-red-500">*</span>
                     </label>
                     <div class="mt-1">
-                        <RichTextEditor v-model="form.key_findings"
+                        <RichTextEditor v-model:value="form.key_findings"
                             :key="'findings-' + (visitId || 'new') + '-' + isEdit"
                             placeholder="Describe the key findings..." />
                         <div v-if="validationErrors.key_findings" class="text-red-600 text-sm mt-1">
@@ -92,7 +92,7 @@
                         Recommendations/Next Steps <span class="text-red-500">*</span>
                     </label>
                     <div class="mt-1">
-                        <RichTextEditor v-model="form.recommendations"
+                        <RichTextEditor v-model:value="form.recommendations"
                             :key="'recommendations-' + (visitId || 'new') + '-' + isEdit"
                             placeholder="Describe the recommendations..." />
                         <div v-if="validationErrors.recommendations" class="text-red-600 text-sm mt-1">
@@ -215,17 +215,14 @@ export default {
             this.loading = true
             this.validationErrors = {}
 
-            // Sanitize rich text fields
-            // const sanitize = (val) => {
-            //     if (!val) return '';
-            //     const cleaned = val.replace(/<p><br><\/p>/gi, '').replace(/\s+/g, '');
-            //     return cleaned === '' ? '' : val;
-            // };
-            this.form.context = this.form.context;
-            this.form.activities_undertaken = this.form.activities_undertaken;
-            this.form.progress = this.form.progress;
-            this.form.key_findings = this.form.key_findings;
-            this.form.recommendations = this.form.recommendations;
+            // Ensure rich text fields are properly set (empty strings for empty content)
+            this.form.context = this.form.context || '';
+            this.form.activities_undertaken = this.form.activities_undertaken || '';
+            this.form.progress = this.form.progress || '';
+            this.form.key_findings = this.form.key_findings || '';
+            this.form.recommendations = this.form.recommendations || '';
+
+            console.log('Submitting form data:', this.form);
 
             try {
                 // First, refresh the CSRF token

@@ -34,8 +34,14 @@
                     </div>
                 </div>
 
+                <!-- Edit Form Loading -->
+                <div v-if="isEditing && !editFormReady" class="text-center py-8">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                    <p class="mt-4 text-gray-600">Preparing edit form...</p>
+                </div>
+
                 <!-- Edit Form -->
-                <form v-if="isEditing" @submit.prevent="saveChanges" class="space-y-6">
+                <form v-if="isEditing && editFormReady" @submit.prevent="saveChanges" class="space-y-6">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Visit Date</label>
@@ -66,7 +72,8 @@
                             Context
                         </label>
                         <div class="mt-1">
-                            <RichTextEditor v-model="editForm.context" :key="'context-' + visit.id + '-' + isEditing"
+                            {{ console.log(editForm.context) }}
+                            <RichTextEditor v-if="editFormReady && editForm.context !== undefined" v-model:value="editForm.context" :key="'context-' + visit.id + '-' + formKey"
                                 placeholder="Describe the context of the visit..." />
                             <div v-if="validationErrors.context" class="text-red-600 text-sm mt-1">
                                 {{ validationErrors.context[0] }}
@@ -79,8 +86,8 @@
                             Activities Undertaken
                         </label>
                         <div class="mt-1">
-                            <RichTextEditor v-model="editForm.activities_undertaken"
-                                :key="'activities-' + visit.id + '-' + isEditing"
+                            <RichTextEditor v-if="editFormReady && editForm.activities_undertaken !== undefined" v-model:value="editForm.activities_undertaken"
+                                :key="'activities-' + visit.id + '-' + formKey"
                                 placeholder="Describe the activities undertaken during the visit..." />
                             <div v-if="validationErrors.activities_undertaken" class="text-red-600 text-sm mt-1">
                                 {{ validationErrors.activities_undertaken[0] }}
@@ -93,7 +100,7 @@
                             Progress towards actions from last visit (if applicable)
                         </label>
                         <div class="mt-1">
-                            <RichTextEditor v-model="editForm.progress" :key="'progress-' + visit.id + '-' + isEditing"
+                            <RichTextEditor v-if="editFormReady && editForm.progress !== undefined" v-model:value="editForm.progress" :key="'progress-' + visit.id + '-' + formKey"
                                 placeholder="Describe progress made on actions from previous visit..." />
                             <div v-if="validationErrors.progress" class="text-red-600 text-sm mt-1">
                                 {{ validationErrors.progress[0] }}
@@ -106,8 +113,8 @@
                             Key Findings
                         </label>
                         <div class="mt-1">
-                            <RichTextEditor v-model="editForm.key_findings"
-                                :key="'findings-' + visit.id + '-' + isEditing"
+                            <RichTextEditor v-if="editFormReady && editForm.key_findings !== undefined" v-model:value="editForm.key_findings"
+                                :key="'findings-' + visit.id + '-' + formKey"
                                 placeholder="Document key findings from the visit..." />
                             <div v-if="validationErrors.key_findings" class="text-red-600 text-sm mt-1">
                                 {{ validationErrors.key_findings[0] }}
@@ -120,8 +127,8 @@
                             Recommendations/Next Steps
                         </label>
                         <div class="mt-1">
-                            <RichTextEditor v-model="editForm.recommendations"
-                                :key="'recommendations-' + visit.id + '-' + isEditing"
+                            <RichTextEditor v-if="editFormReady && editForm.recommendations !== undefined" v-model:value="editForm.recommendations"
+                                :key="'recommendations-' + visit.id + '-' + formKey"
                                 placeholder="Provide recommendations and next steps..." />
                             <div v-if="validationErrors.recommendations" class="text-red-600 text-sm mt-1">
                                 {{ validationErrors.recommendations[0] }}
@@ -141,7 +148,7 @@
                             Cancel
                         </button>
                         <button type="submit" :disabled="saving"
-                            class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition duration-150 ease-in-out">
+                            class="px-6 py-2 cursor-pointer bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition duration-150 ease-in-out">
                             {{ saving ? 'Saving...' : 'Save Changes' }}
                         </button>
                     </div>
@@ -312,6 +319,8 @@ export default {
             isEditing: false,
             saving: false,
             showDeleteModal: false,
+            formKey: 0,
+            editFormReady: false,
             editForm: {
                 visit_date: '',
                 consultant_name: '',
@@ -352,14 +361,21 @@ export default {
 
         toggleEdit() {
             if (!this.isEditing) {
+                this.editFormReady = false
                 this.initializeEditForm();
-                this.isEditing = true;
+                // Add a small delay to ensure data is properly set
+                setTimeout(() => {
+                    this.editFormReady = true
+                    this.isEditing = true;
+                }, 100)
             } else {
                 this.isEditing = false;
+                this.editFormReady = false;
             }
         },
 
         initializeEditForm() {
+            this.formKey++
             this.editForm = {
                 visit_date: this.formatDateForInput(this.visit.visit_date),
                 consultant_name: this.visit.consultant_name,

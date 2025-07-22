@@ -260,7 +260,7 @@ export default {
   computed: {
     ...mapState(['visits', 'schools']),
     filteredVisits() {
-      return this.visits.filter(visit => {
+      const filtered = this.visits.filter(visit => {
         const matchesSearch = !this.search ||
           (visit.school && visit.school.name && visit.school.name.toLowerCase().includes(this.search.toLowerCase())) ||
           (visit.consultant_name && visit.consultant_name.toLowerCase().includes(this.search.toLowerCase()));
@@ -269,6 +269,13 @@ export default {
         const matchesSchool = !this.schoolFilter || visit.school_id == this.schoolFilter;
 
         return matchesSearch && matchesStatus && matchesSchool;
+      });
+
+      // Sort by created_at date (newest first)
+      return filtered.sort((a, b) => {
+        const dateA = new Date(a.created_at || a.visit_date);
+        const dateB = new Date(b.created_at || b.visit_date);
+        return dateB - dateA;
       });
     }
   },
