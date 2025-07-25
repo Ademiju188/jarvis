@@ -23,7 +23,6 @@ Route::get('/create-admin', [AuthController::class, 'createAdmin']);
 
 // Public routes (no authentication required)
 Route::get('/schools/token/{token}', [SchoolController::class, 'getByToken'])->name('school.access');
-Route::post('/visits/{visit}/feedback', [VisitController::class, 'submitFeedback'])->name('visit.feedback');
 Route::get('/visits/{visit}/pdf', [VisitController::class, 'generatePdf'])->name('visit.pdf');
 
 // Protected routes (both admin and headteacher)

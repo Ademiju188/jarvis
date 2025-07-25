@@ -8,6 +8,7 @@ use App\Models\School;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\User;
 
@@ -75,7 +76,7 @@ class VisitController extends Controller
             'key_findings' => 'sometimes|required|string',
             'recommendations' => 'sometimes|required|string',
             'next_visit_date' => 'nullable|date',
-            'status' => 'sometimes|in:draft,pending_review,approved,finalized',
+            'status' => 'sometimes|in:draft,pending_review,approved,finalised',
             'headteacher_feedback' => 'nullable|string',
         ]);
 
@@ -95,7 +96,7 @@ class VisitController extends Controller
         }
 
         $validated = $request->validate([
-            'status' => 'required|in:draft,pending_review,approved,finalized',
+            'status' => 'required|in:draft,pending_review,approved,finalised',
         ]);
 
         $visit->update($validated);
@@ -142,9 +143,13 @@ class VisitController extends Controller
             'headteacher_feedback' => 'required|string',
         ]);
 
+
+        // Determine the new status based on current status
+        $newStatus = $visit->status === 'pending_review' ? 'approved' : 'pending_review';
+
         $visit->update([
             'headteacher_feedback' => $validated['headteacher_feedback'],
-            'status' => 'pending_review'
+            'status' => $newStatus
         ]);
 
         return response()->json(['message' => 'Feedback submitted successfully']);
@@ -160,10 +165,14 @@ class VisitController extends Controller
         $validated = $request->validate([
             'headteacher_feedback' => 'required|string',
         ]);
+
+        $newStatus = $visit->status === 'pending_review' || $visit->status === 'draft' ? 'approved' : 'pending_review';
+
         $visit->update([
             'headteacher_feedback' => $validated['headteacher_feedback'],
-            'status' => 'pending_review',
+            'status' => 'approved',
         ]);
+
         $visit->load('school');
         return response()->json(['message' => 'Feedback submitted successfully', 'visit' => $visit]);
     }

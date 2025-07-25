@@ -79,7 +79,7 @@ const store = createStore({
     },
     getters: {
         pendingVisits: (state) => state.visits.filter(v => v.status === 'pending_review'),
-        finalizedVisits: (state) => state.visits.filter(v => v.status === 'finalized'),
+        finalisedVisits: (state) => state.visits.filter(v => v.status === 'finalised'),
         recentVisits: (state) => state.visits.slice(0, 5)
     },
     actions: {

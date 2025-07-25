@@ -31,7 +31,7 @@
               class="text-gray-900 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition duration-150 ease-in-out"
               active-class="text-blue-600"
             >
-              HeadTeachers
+              Headteachers
             </router-link>
           </div>
         </div>
@@ -128,7 +128,7 @@
             active-class="text-blue-600 bg-blue-50"
             @click="mobileMenuOpen = false"
           >
-            HeadTeachers
+            Headteachers
           </router-link>
           <div class="border-t border-gray-200 pt-2">
             <div class="px-3 py-2">
@@ -206,7 +206,7 @@ export default {
         this.userInitials = 'U';
       }
     },
-    
+
     getInitials(name) {
       return name
         .split(' ')
@@ -215,14 +215,14 @@ export default {
         .toUpperCase()
         .slice(0, 2);
     },
-    
+
     handleClickOutside(event) {
       const dropdown = this.$el.querySelector('.relative');
       if (dropdown && !dropdown.contains(event.target)) {
         this.userDropdownOpen = false;
       }
     },
-    
+
     logout() {
       this.userDropdownOpen = false;
       // Call the global logout method from parent App component

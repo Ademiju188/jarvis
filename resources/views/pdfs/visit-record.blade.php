@@ -124,7 +124,7 @@
     <table class="main-table">
         <tr>
             <th style="text-align: left;">Headteacher</th>
-            <td>{{ $visit->school->headteacher_name }}</td>
+            <td>{{ $visit->school->headteacher->name }}</td>
         </tr>
         <tr>
             <th style="text-align: left;">Focus of the visit</th>

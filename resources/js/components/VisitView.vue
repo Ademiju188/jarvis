@@ -11,12 +11,11 @@
                 <!-- Header -->
                 <div class="flex justify-between items-center mb-6">
                     <div class="flex items-center space-x-4">
-                        <button
-                            @click="goBack"
-                            class="flex cursor-pointer items-center space-x-2 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition duration-150 ease-in-out"
-                        >
+                        <button @click="goBack"
+                            class="flex cursor-pointer items-center space-x-2 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition duration-150 ease-in-out">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                             </svg>
                             <span>Back</span>
                         </button>
@@ -63,7 +62,7 @@
                             <option value="draft">Draft</option>
                             <option value="pending_review">Pending Review</option>
                             <option value="approved">Approved</option>
-                            <option value="finalized">Finalized</option>
+                            <option value="finalised">Finalised</option>
                         </select>
                     </div>
 
@@ -73,7 +72,8 @@
                         </label>
                         <div class="mt-1">
                             {{ console.log(editForm.context) }}
-                            <RichTextEditor v-if="editFormReady && editForm.context !== undefined" v-model:value="editForm.context" :key="'context-' + visit.id + '-' + formKey"
+                            <RichTextEditor v-if="editFormReady && editForm.context !== undefined"
+                                v-model:value="editForm.context" :key="'context-' + visit.id + '-' + formKey"
                                 placeholder="Describe the context of the visit..." />
                             <div v-if="validationErrors.context" class="text-red-600 text-sm mt-1">
                                 {{ validationErrors.context[0] }}
@@ -86,7 +86,8 @@
                             Activities Undertaken
                         </label>
                         <div class="mt-1">
-                            <RichTextEditor v-if="editFormReady && editForm.activities_undertaken !== undefined" v-model:value="editForm.activities_undertaken"
+                            <RichTextEditor v-if="editFormReady && editForm.activities_undertaken !== undefined"
+                                v-model:value="editForm.activities_undertaken"
                                 :key="'activities-' + visit.id + '-' + formKey"
                                 placeholder="Describe the activities undertaken during the visit..." />
                             <div v-if="validationErrors.activities_undertaken" class="text-red-600 text-sm mt-1">
@@ -100,7 +101,8 @@
                             Progress towards actions from last visit (if applicable)
                         </label>
                         <div class="mt-1">
-                            <RichTextEditor v-if="editFormReady && editForm.progress !== undefined" v-model:value="editForm.progress" :key="'progress-' + visit.id + '-' + formKey"
+                            <RichTextEditor v-if="editFormReady && editForm.progress !== undefined"
+                                v-model:value="editForm.progress" :key="'progress-' + visit.id + '-' + formKey"
                                 placeholder="Describe progress made on actions from previous visit..." />
                             <div v-if="validationErrors.progress" class="text-red-600 text-sm mt-1">
                                 {{ validationErrors.progress[0] }}
@@ -113,8 +115,8 @@
                             Key Findings
                         </label>
                         <div class="mt-1">
-                            <RichTextEditor v-if="editFormReady && editForm.key_findings !== undefined" v-model:value="editForm.key_findings"
-                                :key="'findings-' + visit.id + '-' + formKey"
+                            <RichTextEditor v-if="editFormReady && editForm.key_findings !== undefined"
+                                v-model:value="editForm.key_findings" :key="'findings-' + visit.id + '-' + formKey"
                                 placeholder="Document key findings from the visit..." />
                             <div v-if="validationErrors.key_findings" class="text-red-600 text-sm mt-1">
                                 {{ validationErrors.key_findings[0] }}
@@ -127,7 +129,8 @@
                             Recommendations/Next Steps
                         </label>
                         <div class="mt-1">
-                            <RichTextEditor v-if="editFormReady && editForm.recommendations !== undefined" v-model:value="editForm.recommendations"
+                            <RichTextEditor v-if="editFormReady && editForm.recommendations !== undefined"
+                                v-model:value="editForm.recommendations"
                                 :key="'recommendations-' + visit.id + '-' + formKey"
                                 placeholder="Provide recommendations and next steps..." />
                             <div v-if="validationErrors.recommendations" class="text-red-600 text-sm mt-1">
@@ -205,8 +208,9 @@
                     </div>
 
                     <!-- Headteacher Feedback -->
-                    <div v-if="visit.headteacher_feedback" class="bg-white overflow-hidden shadow-sm sm:rounded-lg border border-gray-200 p-6">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-4">HeadTeacher Feedback</h3>
+                    <div v-if="visit.headteacher_feedback"
+                        class="bg-white overflow-hidden shadow-sm sm:rounded-lg border border-gray-200 p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Headteacher Feedback</h3>
                         <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4">
                             <p class="text-gray-700 whitespace-pre-wrap">{{ visit.headteacher_feedback }}</p>
                         </div>
@@ -238,8 +242,8 @@
                     <div>
                         <p class="text-sm text-gray-600 mb-3">Change Status:</p>
                         <div class="space-y-2">
-                            <button v-for="status in ['draft', 'pending_review', 'approved', 'finalized']" :key="status"
-                                @click="updateStatus(status)" :disabled="visit.status === status"
+                            <button v-for="status in ['draft', 'pending_review', 'approved', 'finalised']" :key="status"
+                                @click="updateStatus(status)" :disabled="visit.status === status || saving"
                                 class="w-full text-left p-3 rounded-lg border transition-all duration-200 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                                 :class="visit.status === status ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-blue-300'">
                                 <div class="flex items-center justify-between">
@@ -247,13 +251,27 @@
                                         <span :class="getStatusClass(status)" class="w-3 h-3 rounded-full mr-3"></span>
                                         <span class="font-medium">{{ formatStatus(status) }}</span>
                                     </div>
-                                    <svg v-if="visit.status === status" class="w-5 h-5 text-blue-500" fill="none"
-                                        stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M5 13l4 4L19 7"></path>
-                                    </svg>
+                                    <div class="flex items-center">
+                                        <!-- Loading spinner for the status being updated -->
+                                        <div v-if="saving && visit.status !== status" class="mr-2">
+                                            <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600">
+                                            </div>
+                                        </div>
+                                        <svg v-if="visit.status === status" class="w-5 h-5 text-blue-500" fill="none"
+                                            stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M5 13l4 4L19 7"></path>
+                                        </svg>
+                                    </div>
                                 </div>
                             </button>
+                        </div>
+                        <!-- Overall loading indicator -->
+                        <div v-if="saving" class="mt-3 text-center">
+                            <div class="inline-flex items-center text-sm text-gray-600">
+                                <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+                                Updating status...
+                            </div>
                         </div>
                     </div>
 
@@ -474,7 +492,7 @@ export default {
                 draft: 'Draft',
                 pending_review: 'Pending Review',
                 approved: 'Approved',
-                finalized: 'Finalized'
+                finalised: 'Finalised'
             }
             return statusMap[status] || status
         },
@@ -484,14 +502,39 @@ export default {
                 draft: 'bg-gray-100 text-gray-800',
                 pending_review: 'bg-yellow-100 text-yellow-800',
                 approved: 'bg-green-100 text-green-800',
-                finalized: 'bg-blue-100 text-blue-800'
+                finalised: 'bg-blue-100 text-blue-800'
             }
             return classMap[status] || 'bg-gray-100 text-gray-800'
+        },
+
+        async refreshCsrfToken() {
+            try {
+                const response = await fetch('/csrf-token');
+                if (response.ok) {
+                    const data = await response.json();
+                    const metaTag = document.querySelector('meta[name="csrf-token"]');
+                    if (metaTag) {
+                        metaTag.setAttribute('content', data.token);
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to refresh CSRF token:', error);
+            }
         },
 
         async updateStatus(newStatus) {
             this.saving = true
             try {
+                // First, refresh the CSRF token
+                const tokenResponse = await fetch('/csrf-token');
+                if (tokenResponse.ok) {
+                    const data = await tokenResponse.json();
+                    const metaTag = document.querySelector('meta[name="csrf-token"]');
+                    if (metaTag) {
+                        metaTag.setAttribute('content', data.token);
+                    }
+                }
+
                 const response = await fetch(`/api/visits/${this.visit.id}/status`, {
                     method: 'PUT',
                     headers: {

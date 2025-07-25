@@ -165,11 +165,28 @@ export default {
     clearErrors() {
       this.errors = {};
     },
+    async refreshCsrfToken() {
+      try {
+        const response = await fetch('/csrf-token');
+        if (response.ok) {
+          const data = await response.json();
+          const metaTag = document.querySelector('meta[name="csrf-token"]');
+          if (metaTag) {
+            metaTag.setAttribute('content', data.token);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to refresh CSRF token:', error);
+      }
+    },
     async submitForm() {
       this.clearErrors();
       this.submitting = true;
 
       try {
+        // First, refresh the CSRF token
+        await this.refreshCsrfToken();
+
         // Prepare form data
         const formData = {
           name: this.form.name,

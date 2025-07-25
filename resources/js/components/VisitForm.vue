@@ -38,7 +38,8 @@
                         Context <span class="text-red-500">*</span>
                     </label>
                     <div class="mt-1">
-                        <RichTextEditor v-model:value="form.context" :key="'context-' + (visitId || 'new') + '-' + isEdit"
+                        <RichTextEditor v-model:value="form.context"
+                            :key="'context-' + (visitId || 'new') + '-' + isEdit"
                             placeholder="Describe the context and purpose of this visit..." />
                         <div v-if="validationErrors.context" class="text-red-600 text-sm mt-1">
                             {{ validationErrors.context[0] }}
@@ -65,7 +66,8 @@
                         Progress towards actions from last visit (if applicable)
                     </label>
                     <div class="mt-1">
-                        <RichTextEditor v-model:value="form.progress" :key="'progress-' + (visitId || 'new') + '-' + isEdit"
+                        <RichTextEditor v-model:value="form.progress"
+                            :key="'progress-' + (visitId || 'new') + '-' + isEdit"
                             placeholder="Describe the progress..." />
                         <div v-if="validationErrors.progress" class="text-red-600 text-sm mt-1">
                             {{ validationErrors.progress[0] }}
@@ -221,8 +223,6 @@ export default {
             this.form.progress = this.form.progress || '';
             this.form.key_findings = this.form.key_findings || '';
             this.form.recommendations = this.form.recommendations || '';
-
-            console.log('Submitting form data:', this.form);
 
             try {
                 // First, refresh the CSRF token

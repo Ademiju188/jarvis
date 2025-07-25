@@ -77,8 +77,8 @@
               </div>
             </div>
             <div class="ml-4">
-              <p class="text-sm font-medium text-gray-500">Finalized</p>
-              <p class="text-2xl font-semibold text-gray-900">{{ finalizedVisits.length }}</p>
+              <p class="text-sm font-medium text-gray-500">Finalised</p>
+              <p class="text-2xl font-semibold text-gray-900">{{ finalisedVisits.length }}</p>
             </div>
           </div>
         </div>
@@ -165,8 +165,8 @@ export default {
     pendingVisits() {
       return this.visits.filter(v => v.status === 'pending_review')
     },
-    finalizedVisits() {
-      return this.visits.filter(v => v.status === 'finalized')
+    finalisedVisits() {
+      return this.visits.filter(v => v.status === 'finalised')
     }
   },
   async mounted() {
@@ -237,7 +237,7 @@ export default {
         draft: 'Draft',
         pending_review: 'Pending Review',
         approved: 'Approved',
-        finalized: 'Finalized'
+        finalized: 'Finalised'
       }
       return statusMap[status] || status
     },
@@ -247,7 +247,7 @@ export default {
         draft: 'bg-gray-100 text-gray-800',
         pending_review: 'bg-yellow-100 text-yellow-800',
         approved: 'bg-green-100 text-green-800',
-        finalized: 'bg-blue-100 text-blue-800'
+        finalised: 'bg-blue-100 text-blue-800'
       }
       return classMap[status] || 'bg-gray-100 text-gray-800'
     },

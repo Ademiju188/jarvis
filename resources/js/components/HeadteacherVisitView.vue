@@ -11,12 +11,11 @@
                 <!-- Header -->
                 <div class="mb-6">
                     <div class="flex items-center space-x-4">
-                        <button
-                            @click="goBack"
-                            class="flex cursor-pointer items-center space-x-2 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition duration-150 ease-in-out"
-                        >
+                        <button @click="goBack"
+                            class="flex cursor-pointer items-center space-x-2 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition duration-150 ease-in-out">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                             </svg>
                             <span>Back</span>
                         </button>
@@ -62,17 +61,18 @@
                         <h3 class="text-sm font-medium text-gray-500">Next Visit Date</h3>
                         <p class="mt-1 text-lg text-gray-900">{{ formatDate(visit.next_visit_date) }}</p>
                     </div>
-                    <!-- HeadMaster Feedback -->
+                    <!-- Headteacher Feedback -->
                     <div v-if="visit.headteacher_feedback"
                         class="bg-white overflow-hidden shadow-sm sm:rounded-lg border border-gray-200 p-6">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-4">HeadMaster Feedback</h3>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Headteacher Feedback</h3>
                         <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4">
                             <p class="text-gray-700 whitespace-pre-wrap">{{ visit.headteacher_feedback }}</p>
                         </div>
                     </div>
 
                     <!-- Submit Feedback Form -->
-                    <div v-if="!visit.headteacher_feedback" class="bg-white overflow-hidden shadow-sm sm:rounded-lg border border-gray-200 p-6">
+                    <div v-if="!visit.headteacher_feedback"
+                        class="bg-white overflow-hidden shadow-sm sm:rounded-lg border border-gray-200 p-6">
                         <h3 class="text-lg font-semibold text-gray-900 mb-4">Submit Feedback</h3>
                         <form @submit.prevent="submitFeedback" class="space-y-4">
                             <div>
@@ -85,7 +85,7 @@
                             </div>
                             <div class="flex justify-end">
                                 <button type="submit" :disabled="submitting"
-                                    class="px-6 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 hover-lift">
+                                    class="px-6 py-2 cursor-pointer text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 hover-lift">
                                     <span v-if="submitting" class="flex items-center">
                                         <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none"
                                             viewBox="0 0 24 24">
@@ -196,7 +196,7 @@ export default {
                 draft: 'Draft',
                 pending_review: 'Pending Review',
                 approved: 'Approved',
-                finalized: 'Finalized'
+                finalised: 'Finalised'
             }
             return statusMap[status] || status
         },
@@ -206,7 +206,7 @@ export default {
                 draft: 'bg-gray-100 text-gray-800',
                 pending_review: 'bg-yellow-100 text-yellow-800',
                 approved: 'bg-green-100 text-green-800',
-                finalized: 'bg-blue-100 text-blue-800'
+                finalised: 'bg-blue-100 text-blue-800'
             }
             return classMap[status] || 'bg-gray-100 text-gray-800'
         },

@@ -143,7 +143,7 @@ class AuthController extends Controller
 
         $visits = Visit::where('school_id', $user->school_id)
             ->with(['school'])
-            ->orderBy('visit_date', 'desc')
+            ->latest()
             ->get();
 
         return response()->json($visits);
@@ -160,9 +160,11 @@ class AuthController extends Controller
         }
 
         $headteachers = User::where('role', 'headteacher')
-            ->with(['school' => function($query) {
-                $query->withCount('visits');
-            }])
+            ->with([
+                'school' => function ($query) {
+                    $query->withCount('visits');
+                }
+            ])
             ->orderBy('name')
             ->get();
 
